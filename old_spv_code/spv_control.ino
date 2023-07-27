@@ -7,6 +7,8 @@
 Controls contactors that control the direction of rotation a 3-phase motor (used to rotate the filter in the leach tank) by reversing two of the phases. 
 Also controls two solonoid valves (to inflate and deflate a bladder) and a vacuum pump. 
 
+Written for Industruino IND.I/O D21G
+
 
 */
 
