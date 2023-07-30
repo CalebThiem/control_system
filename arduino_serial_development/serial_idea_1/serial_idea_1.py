@@ -9,13 +9,11 @@ low = [0]
 
 high.append(13)
 
-high_len = len(high)
-
 low.append(13)
 
-low_len = len(low)
+arduino.write(bytearray(high)
 
-arduino.write(high, high_len)
+arduino.write(bytes())
 
 print("Transmit: ", high)
 

@@ -14,3 +14,7 @@ Arduino: Sending and Receiving Multi-Digit Integers
 
 https://www.baldengineer.com/arduino-multi-digit-integers.html
 
+Arduino Cookbook: Serial
+
+https://www.oreilly.com/library/view/arduino-cookbook/9781449399368/ch04.html
+
