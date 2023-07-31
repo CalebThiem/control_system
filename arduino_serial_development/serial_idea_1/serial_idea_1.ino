@@ -1,45 +1,34 @@
-import serial
-import time
-import random
+#define START_MARKER 'a'
+#define END_MARKER 'z'
+#define MAX_MESSAGE_LENGTH 150
 
-ser = serial.Serial('/dev/ttyACM0', 115200)  # replace '/dev/ttyACM0' with your serial port
+char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
+bool receiving = false;
+int dataIndex = 0;
 
-# Wait for the Arduino to reset
-time.sleep(2)
+void setup() {
+  Serial.begin(115200);
+}
 
-successes = 0
-failures = 0
+void loop() {
+  while (Serial.available() > 0) {
+    char receivedChar = Serial.read();
 
-for _ in range(1000):
-    data = ''.join(random.choice('01') for _ in range(150))  # Generate random data
-
-    # Send the data
-    ser.write(b'a')
-    for char in data:
-        ser.write(char.encode())
-        time.sleep(0.00001)  # Delay to prevent Arduino's serial buffer from overflowing
-    ser.write(b'z')
-
-    # Print out the sent data
-    print('Sent data:    ', data)
-
-    time.sleep(0.05)
-
-    # Wait for the Arduino to send back the data
-    received_data = ser.readline().decode().strip()
-
-    # Verify the data
-    if received_data == data:
-        successes += 1
-    else:
-        failures += 1
-        print('Error: Data verification failed')
-
-    # Print out debug info from the Arduino
-    while ser.in_waiting > 0:
-        print(ser.readline().decode().strip())
-
-print('Successes:', successes)
-print('Failures:', failures)
-
-ser.close()
+    if (receivedChar == START_MARKER) {
+      receiving = true;
+      dataIndex = 0;
+    } else if (receivedChar == END_MARKER) {
+      receiving = false;
+      receivedData[dataIndex] = '\0';  // Null-terminate the data
+      Serial.write(receivedData);
+      Serial.write("\n");
+      Serial.print("Received data: ");
+      Serial.println(receivedData);
+    } else if (receiving) {
+      if (dataIndex < MAX_MESSAGE_LENGTH) {
+        receivedData[dataIndex] = receivedChar;
+        dataIndex++;
+      }
+    }
+  }
+}
