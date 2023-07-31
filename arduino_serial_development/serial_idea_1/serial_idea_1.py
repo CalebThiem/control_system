@@ -1,3 +1,10 @@
+"""
+Created by GPT-4. The idea is to send 150 characters, 1 or 0, to an Arduino in order to control output pins.
+The position of the character denotes the pin number, and the value the pin state. 
+
+"""
+
+
 import serial
 import time
 import random
@@ -23,6 +30,7 @@ for _ in range(1000):
     # Print out the sent data
     print('Sent data:    ', data)
 
+    # Wait for Arduino to start transmission (human intuition that fixed the program!)
     time.sleep(0.05)
 
     # Wait for the Arduino to send back the data
