@@ -1,6 +1,24 @@
 """
+
 Created by GPT-4. The idea is to send 150 characters, 1 or 0, to an Arduino in order to control output pins.
 The position of the character denotes the pin number, and the value the pin state. 
+
+GPT-4:
+
+This script sends a series of binary values to an Arduino via serial communication. 
+The data sent is a string of 150 characters, each of which is either '0' or '1'. 
+The position of each character in the string corresponds to a specific pin on the Arduino, 
+and the value of the character ('0' or '1') corresponds to the desired state of that pin (LOW or HIGH, respectively).
+
+The script sends the data to the Arduino, waits for the Arduino to process the data and send it back, 
+and then verifies that the data received from the Arduino matches the data that was sent. 
+This process is repeated 1000 times, and the number of successful and failed transmissions is tracked and printed out at the end.
+
+The script uses the pySerial library to handle the serial communication. 
+The baud rate is set to 115200, and the script includes a delay after sending each character to 
+prevent the Arduino's serial buffer from overflowing. The script also includes a delay after sending the 
+data and before reading the Arduino's response, to give the Arduino time to process the data and start its transmission.
+
 
 """
 
