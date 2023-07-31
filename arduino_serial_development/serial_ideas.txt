@@ -1,1 +1,2 @@
-Serial.readBytesUntil() reads characters from serial. First character is 1 or 0, and detirmines if the following characters set pins to HIGH or LOW. 
+1.  Each char in a char array of 150 characters represents a pin. Pin number is represented by the array index, pin state is represented by the char being either '1' or '0'. 
+    Char array is sent over serial as a string.
