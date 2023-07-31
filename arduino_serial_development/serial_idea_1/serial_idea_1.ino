@@ -1,3 +1,20 @@
+"""
+Created by GPT-4. It receives 150 characters, 1 or 0, from a PC via serial communication to 
+control output pins. The position of the character denotes the pin number, and the value the pin state. 
+It then sends back the received data for verification.
+
+This script receives a series of binary values from a PC via serial communication. 
+The data received is a string of 150 characters, each of which is either '0' or '1'. 
+The position of each character in the string corresponds to a specific pin on the Arduino, 
+and the value of the character ('0' or '1') corresponds to the desired state of that pin (LOW or HIGH, respectively).
+
+The script reads the data from the serial buffer, processes it, and then sends it back to the PC. 
+The script uses start and end markers to frame the data, and includes error checking to ensure that the data is received correctly.
+
+The script uses the Arduino's built-in Serial library to handle the serial communication. The baud rate is set to 115200.
+"""
+
+
 #define START_MARKER 'a'
 #define END_MARKER 'z'
 #define MAX_MESSAGE_LENGTH 150
