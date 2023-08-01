@@ -1,6 +1,7 @@
 """
 
-Created by GPT-4. The idea is to send up to 300 characters, 1 or 0, to an Arduino in order to control output pins.
+Created by GPT-4. The idea is to send up to 300 (8 leading characters for checksum, 
+292 other) characters, 1 or 0, to an Arduino in order to control output pins.
 The position of the character denotes the pin number, and the value the pin state. 
 
 GPT-4:
@@ -26,6 +27,15 @@ data and before reading the Arduino's response, to give the Arduino time to proc
 import serial
 import time
 import random
+import binascii
+
+
+def add_checksum(data):
+    # Calculate the CRC32 checksum and format it as a zero-padded 8-digit hexadecimal string
+    checksum = format(binascii.crc32(data.encode()) & 0xffffffff, '08x')
+
+    # Return the checksum followed by the original data
+    return checksum + data
 
 ser = serial.Serial('/dev/ttyACM0', 115200)  # replace '/dev/ttyACM0' with your serial port
 
@@ -35,15 +45,17 @@ time.sleep(2)
 successes = 0
 failures = 0
 
-for _ in range(10):
-    data = ''.join(random.choice('01') for _ in range(300))  # Generate random data
+def serial_communicate(data):
+
+    global successes
+    global failures
 
     # Send the data
-    ser.write(b'a')
+    ser.write(b'<')
     for char in data:
         ser.write(char.encode())
         time.sleep(0.00001)  # Delay to prevent Arduino's serial buffer from overflowing
-    ser.write(b'z')
+    ser.write(b'>')
 
     # Print out the sent data
     print('Sent data:    ', data)
@@ -64,6 +76,12 @@ for _ in range(10):
     # Print out debug info from the Arduino
     while ser.in_waiting > 0:
         print(ser.readline().decode().strip())
+
+for i in range(100):
+
+    data = ''.join(random.choice('01') for _ in range(160))  # Generate random data
+
+    serial_communicate(add_checksum(data))
 
 print('Successes:', successes)
 print('Failures:', failures)
