@@ -1,4 +1,4 @@
-"""
+/*
 Created by GPT-4. It receives 150 characters, 1 or 0, from a PC via serial communication to 
 control output pins. The position of the character denotes the pin number, and the value the pin state. 
 It then sends back the received data for verification.
@@ -12,7 +12,7 @@ The script reads the data from the serial buffer, processes it, and then sends i
 The script uses start and end markers to frame the data, and includes error checking to ensure that the data is received correctly.
 
 The script uses the Arduino's built-in Serial library to handle the serial communication. The baud rate is set to 115200.
-"""
+*/
 
 
 #define START_MARKER 'a'

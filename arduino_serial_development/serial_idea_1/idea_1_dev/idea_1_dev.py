@@ -1,8 +1,9 @@
 import serial
 import time
+import random
 
-def send_to_arduino(data, port='/dev/ttyACM0', baud_rate=115200):
-    ser = serial.Serial(port, baud_rate)  # replace '/dev/ttyACM0' with your serial port
+def send_to_arduino(data):
+    ser = serial.Serial('/dev/ttyACM0', 115200)  # replace '/dev/ttyACM0' with your serial port
 
     # Wait for the Arduino to reset
     time.sleep(2)
@@ -26,9 +27,15 @@ def send_to_arduino(data, port='/dev/ttyACM0', baud_rate=115200):
     # Verify the data
     if received_data == data:
         print('Data verification successful')
-        ser.write(b'Proceed')
+        ser.write(b'a!!!!z')
+        return(1)
     else:
         print('Error: Data verification failed. Resending data...')
-        send_to_arduino(data, port, baud_rate)
+        return(0)
 
     ser.close()
+
+
+data = ''.join(random.choice('01') for _ in range(150))  # Generate random data
+
+send_to_arduino(data)
