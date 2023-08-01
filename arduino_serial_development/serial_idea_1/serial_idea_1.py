@@ -1,12 +1,12 @@
 """
 
-Created by GPT-4. The idea is to send 150 characters, 1 or 0, to an Arduino in order to control output pins.
+Created by GPT-4. The idea is to send up to 300 characters, 1 or 0, to an Arduino in order to control output pins.
 The position of the character denotes the pin number, and the value the pin state. 
 
 GPT-4:
 
 This script sends a series of binary values to an Arduino via serial communication. 
-The data sent is a string of 150 characters, each of which is either '0' or '1'. 
+The data sent is a string of characters, each of which is either '0' or '1'. 
 The position of each character in the string corresponds to a specific pin on the Arduino, 
 and the value of the character ('0' or '1') corresponds to the desired state of that pin (LOW or HIGH, respectively).
 
@@ -35,8 +35,8 @@ time.sleep(2)
 successes = 0
 failures = 0
 
-for _ in range(1000):
-    data = ''.join(random.choice('01') for _ in range(150))  # Generate random data
+for _ in range(10):
+    data = ''.join(random.choice('01') for _ in range(300))  # Generate random data
 
     # Send the data
     ser.write(b'a')
@@ -67,5 +67,6 @@ for _ in range(1000):
 
 print('Successes:', successes)
 print('Failures:', failures)
+
 
 ser.close()
