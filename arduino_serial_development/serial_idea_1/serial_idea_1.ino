@@ -28,27 +28,60 @@ char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminat
 bool receiving = false;
 int dataIndex = 0;
 
+// const char teststring[] = "aaaaaaaabbbbbbbb";
+
+int serialReceive(void);
+
+int verify_checksum(char* message);
+
+
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);  // Initialize the digital pin as an output.
 }
 
 void loop() {
-    if (serialCommunicate() == true) {
+    
+    if (serialReceive() == 2) {
+
+    //  Serial.print("Message authenticated\n\n");
+
+    //  delay(10000);
+
+    Serial.write("Validated\n");
+
+      
       if (receivedData[8] == '1') {
         digitalWrite(LED_BUILTIN, HIGH);
       } else if (receivedData[8] == '0') {
         digitalWrite(LED_BUILTIN, LOW);
       }
-    }
       
+    }
+  
+
+} 
+
+bool test() {
+  return false;
 }
 
 
 // Communicate via serial connection. Retuns true if checksum is verified
 
-int serialCommunicate() {
+int serialReceive() {
+
+  // return false;
+
+  int status = 0;
+
   while (Serial.available() > 0) {
+
+      
+
+      // Serial.print("In While loop\n");
+
       char receivedChar = Serial.read();
 
       if (receivedChar == START_MARKER) {
@@ -57,14 +90,24 @@ int serialCommunicate() {
       } else if (receivedChar == END_MARKER) {
         receiving = false;
         receivedData[dataIndex] = '\0';  // Null-terminate the data
-        Serial.write(receivedData);
-        Serial.write("\n");
-        Serial.print("Received data: ");
-        Serial.println(receivedData);
-        if (verify_checksum(receivedData) == true) {
+        // Serial.write(receivedData);
+        // Serial.write("\n");
+        //Serial.print("Received data: ");
+        // Serial.println(receivedData);
+
+        if (verify_checksum(receivedData) == 2) {
+
+          /*
           Serial.print("Checksum verified");
           Serial.print('\n');
-          return(true);
+          Serial.print("Serial Receive: Returning true\n");
+          */
+
+          status = 2;
+
+          
+        } else {
+          Serial.write("ChecksumFailed\n");
         }
       } else if (receiving) {
         if (dataIndex < MAX_MESSAGE_LENGTH) {
@@ -74,11 +117,16 @@ int serialCommunicate() {
       }
 
   }
+
+  return status;
 }
 
 // Checks the CRC32 checksum in the first 8 bytes of a string (zero padded hexadecimal)
 
-bool verify_checksum(char* message) {
+int verify_checksum(char* message) {
+
+  int status = 0;
+
   // Extract the first 8 characters (checksum in hex)
   char received_checksum[9];
   strncpy(received_checksum, message, 8);
@@ -90,10 +138,24 @@ bool verify_checksum(char* message) {
   // Calculate the checksum of the rest of the message
   unsigned long calculated_checksum = CRC32.crc32((uint8_t*)&message[8], strlen(&message[8]));
 
+  /*
+  Serial.print("Received message: ");
+  Serial.print(message);
+  Serial.print("\n");
+  Serial.print("Received Checksum: ");
+  Serial.print(received_checksum);
+  Serial.print("\n");
+  Serial.print("Calculated Checksum: ");
+  Serial.print(calculated_checksum, HEX);
+  Serial.print("\n");
+  */
+
   // Compare the received and calculated checksums
   if (received_checksum_value == calculated_checksum) {
-    return true;
-  } else {
-    return false;
+    // Serial.print("Checksum: Returning true\n");
+    status = 2;
   }
+
+  return status;
+
 }

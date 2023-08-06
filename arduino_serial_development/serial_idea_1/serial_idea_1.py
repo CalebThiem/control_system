@@ -33,8 +33,8 @@ import binascii
 def add_checksum(data):
     # Calculate the CRC32 checksum and format it as a zero-padded 8-digit hexadecimal string
     checksum = format(binascii.crc32(data.encode()) & 0xffffffff, '08x')
-
     # Return the checksum followed by the original data
+    checksum = checksum.upper()
     return checksum + data
 
 ser = serial.Serial('/dev/ttyACM0', 115200)  # replace '/dev/ttyACM0' with your serial port
@@ -54,32 +54,33 @@ def serial_communicate(data):
     ser.write(b'<')
     for char in data:
         ser.write(char.encode())
-        time.sleep(0.00001)  # Delay to prevent Arduino's serial buffer from overflowing
     ser.write(b'>')
 
     # Print out the sent data
-    print('Sent data:    ', data)
+    # print('Sent data:    ', data)
 
-    # Wait for Arduino to start transmission (human intuition that fixed the program!)
-    time.sleep(0.05)
+    # Wait for Arduino to start transmission (increases reliablity when waiting for transmission from Arduino)
+    # time.sleep(0.05)
 
     # Wait for the Arduino to send back the data
     received_data = ser.readline().decode().strip()
 
     # Verify the data
-    if received_data == data:
+    if received_data == "Validated":
         successes += 1
-    else:
+    if received_data == "ChecksumFailed":
         failures += 1
-        print('Error: Data verification failed')
+        #print('Error: Data verification failed')
+    
 
     # Print out debug info from the Arduino
     while ser.in_waiting > 0:
         print(ser.readline().decode().strip())
+    
 
 for i in range(100):
 
-    data = ''.join(random.choice('01') for _ in range(160))  # Generate random data
+    data = ''.join(random.choice('01') for _ in range(2))  # Generate random data
 
     serial_communicate(add_checksum(data))
 
