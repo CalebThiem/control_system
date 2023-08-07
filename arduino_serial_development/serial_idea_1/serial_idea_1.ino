@@ -25,15 +25,13 @@ FastCRC32 CRC32;
 #define LED_BUILTIN 13  // Most Arduino boards have a built-in LED on pin 13
 
 char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
+
 bool receiving = false;
 int dataIndex = 0;
-
-// const char teststring[] = "aaaaaaaabbbbbbbb";
 
 int serialReceive(void);
 
 int verify_checksum(char* message);
-
 
 
 void setup() {
@@ -45,10 +43,6 @@ void loop() {
     
     if (serialReceive() == 2) {
 
-    //  Serial.print("Message authenticated\n\n");
-
-    //  delay(10000);
-
     Serial.write("Validated\n");
 
       
@@ -59,8 +53,6 @@ void loop() {
       }
       
     }
-  
-
 } 
 
 bool test() {
@@ -90,6 +82,7 @@ int serialReceive() {
       } else if (receivedChar == END_MARKER) {
         receiving = false;
         receivedData[dataIndex] = '\0';  // Null-terminate the data
+        
         // Serial.write(receivedData);
         // Serial.write("\n");
         //Serial.print("Received data: ");
@@ -159,3 +152,4 @@ int verify_checksum(char* message) {
   return status;
 
 }
+

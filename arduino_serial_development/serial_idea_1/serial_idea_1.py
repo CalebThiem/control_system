@@ -70,6 +70,7 @@ def serial_communicate(data):
         successes += 1
     if received_data == "ChecksumFailed":
         failures += 1
+        serial_communicate(data)
         #print('Error: Data verification failed')
     
 
@@ -80,7 +81,9 @@ def serial_communicate(data):
 
 for i in range(100):
 
-    data = ''.join(random.choice('01') for _ in range(2))  # Generate random data
+    data = ''.join(random.choice('01') for _ in range(292))  # Generate random data
+
+#    time.sleep(0.1)
 
     serial_communicate(add_checksum(data))
 
