@@ -1,6 +1,6 @@
 """
 
-Created by GPT-4. The idea is to send up to 300 (8 leading characters for checksum, 
+Written by Caleb Thiem and GPT-4. The idea is to send up to 300 (8 leading characters for checksum, 
 292 other) characters, 1 or 0, to an Arduino in order to control output pins.
 The position of the character denotes the pin number, and the value the pin state. 
 
@@ -29,66 +29,216 @@ import time
 import random
 import binascii
 
+from timeit import default_timer
+
+print_status_messages = 1
+
 
 def add_checksum(data):
+
     # Calculate the CRC32 checksum and format it as a zero-padded 8-digit hexadecimal string
+
     checksum = format(binascii.crc32(data.encode()) & 0xffffffff, '08x')
+
     # Return the checksum followed by the original data
+
     checksum = checksum.upper()
+
     return checksum + data
 
-ser = serial.Serial('/dev/ttyACM0', 115200)  # replace '/dev/ttyACM0' with your serial port
+
+def validate_checksum(received_data):
+
+    # Isolate the first 8 bytes of the transmission (not including the start character "<")
+
+    checksum = received_data[1:9]
+
+    # Isolate the rest of the transmission (not including the end character ">")
+
+    message = received_data[9:-1]
+
+    # Calculate the checksum of the message
+
+    calculated_checksum = format(binascii.crc32(message.encode()) & 0xffffffff, '08x')
+
+    '''
+
+    print("Received data: %s" % received_data)
+    
+    print("Checksum received: %s" % checksum)
+
+    print("Message: %s" % message)
+
+    print("Calculated checksum: %s" % calculated_checksum)
+
+    '''
+
+    # Compare locally calculated and transmitted checksums
+
+    if calculated_checksum.upper() == checksum:
+
+        if print_status_messages == 1:
+            print("Transmission from Arduino validated", end=" ")
+
+        return 0
+
+
+# Open serial connection
+
+ser = serial.Serial('/dev/ttyACM0', 460800)  # replace '/dev/ttyACM0' with your serial port
 
 # Wait for the Arduino to reset
+
 time.sleep(2)
 
-successes = 0
-failures = 0
+upload_successes = 0
+upload_failures = 0
+download_successes = 0
+download_failures = 0
+
+# Sends data, receives confirmaiton/failure message, receives and validates data sent from recipient
 
 def serial_communicate(data):
 
-    global successes
-    global failures
+    global upload_successes
+    global upload_failures
+    global download_successes
+    global download_failures
 
     # Send the data
+
+    # Send message start character
+
     ser.write(b'<')
+
+    # Transmit data one character at a time
+
     for char in data:
+
         ser.write(char.encode())
+
+    # Transmit message end character
+
     ser.write(b'>')
 
-    # Print out the sent data
-    # print('Sent data:    ', data)
+    if print_status_messages == 1:
+        print("Transmitted data to Arduino", end=" ... ")
 
-    # Wait for Arduino to start transmission (increases reliablity when waiting for transmission from Arduino)
-    # time.sleep(0.05)
+    '''
+    Print out the sent data
+    print('Sent data:    ', data)
+    '''
+    '''
+    Wait for Arduino to start transmission (increases reliablity when waiting for transmission from Arduino)
+    time.sleep(0.05)
+    '''
 
     # Wait for the Arduino to send back the data
+
     received_data = ser.readline().decode().strip()
 
     # Verify the data
-    if received_data == "Validated":
-        successes += 1
-    if received_data == "ChecksumFailed":
-        failures += 1
-        serial_communicate(data)
-        #print('Error: Data verification failed')
-    
 
+    if received_data == "Validated":
+
+        if print_status_messages == 1:
+            print("Arduino validated checksum", end=" ... ")
+
+        upload_successes += 1
+
+    if received_data == "ChecksumFailed":
+
+        upload_failures += 1
+
+        if print_status_messages == 1:
+            print('Failed: checksum mismatch', end=" ... ")
+
+        #serial_communicate(data)
+
+    received_data = ser.readline().decode().strip()
+
+    '''
+    print(received_data[0])
+    print(received_data[-1])
+    print(received_data)
+    '''
+
+    # Check for message start and end characters
+
+    if received_data[0] == "<" and received_data[-1] == ">":
+
+        if print_status_messages == 1:
+            print("Received Message", end=" ... ")
+        
+        if validate_checksum(received_data) == 0:
+
+            download_successes += 1
+
+        else:
+
+            download_failures += 1
+
+            if print_status_messages == 1:
+                print("Message checksum mismatch", end="")
+
+            # serial_communicate(data)
+
+
+    '''
     # Print out debug info from the Arduino
     while ser.in_waiting > 0:
         print(ser.readline().decode().strip())
-    
+    '''
 
-for i in range(100):
+    if print_status_messages == 1:
+        print("")
+
+    # Return message body (ninth character and onwards, 0 - 8 is checksum)
+
+    return received_data[9:-1]
+
+
+start = default_timer()
+
+
+# Send random data for testing
+
+for i in range(10):
 
     data = ''.join(random.choice('01') for _ in range(292))  # Generate random data
 
-#    time.sleep(0.1)
+    '''
+    # Break transmission for testing
+    transmit = add_checksum(data)
+    print(transmit)
+    transmit = transmit[:-1]
+    print(transmit)
+    serial_communicate(transmit)
+    '''
+
+    # Transmit data, receive response and data transmitted by Arduino
+
+    '''
+    print("Sent:     ", data)
+    print("Received: ", serial_communicate(add_checksum(data)))
+    '''
+
+
 
     serial_communicate(add_checksum(data))
 
-print('Successes:', successes)
-print('Failures:', failures)
+    #time.sleep(0.07)
 
+ 
+end = default_timer()
+
+print('Upload successes:', upload_successes)
+print('Upload failures:', upload_failures)
+print('Download successes:', download_successes)
+print('Download failures:', download_failures)
+print('Time elapsed: %s seconds' % (end - start))
+
+
+# Close serial connection
 
 ser.close()
