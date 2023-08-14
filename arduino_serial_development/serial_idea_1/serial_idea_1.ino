@@ -40,7 +40,7 @@ int IO21 = A3;
 int IO22 = A4;
 int IO23 = A5;
 
-int OUTMD = 11;
+int OUTMD = 100;
 int IOS1 = 10;
 int IOS2 = 10;
 int IOS3 = 10; 
@@ -61,6 +61,8 @@ MuxShield muxShield2(S20, S21, S22, S23, OUTMD, IOS1, IOS2, IOS3, IO21, IO22, IO
 
 char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
 
+unsigned int receivedDataLength = 0;
+
 char message[MAX_MESSAGE_LENGTH + 1];
 
 bool receiving = false;
@@ -74,6 +76,8 @@ int verify_checksum(char * message);
 void generate_checksum(char * message);
 
 void toggle_outputs(int toggle);
+
+void toggle_relays(unsigned int relayNumber, int state);
 
 
 void setup() {
@@ -101,6 +105,40 @@ void loop() {
 
     if (serialReceive() == 2) {
 
+      /*
+
+      Serial.print(receivedDataLength);
+
+      Serial.print("\n");
+
+      Serial.print(receivedData);
+
+      Serial.print("\n");  
+
+      */
+
+      
+
+      for (unsigned int i = 8; i < receivedDataLength; i++) {
+
+        /*
+
+        Serial.print(i - 7);
+
+        Serial.print(", ");
+
+        Serial.print(receivedData[i] - '0');
+
+        Serial.print("\n");
+
+        */
+
+        toggle_relays(i - 7, receivedData[i] - '0');
+
+      }
+
+      /*
+
         if (receivedData[8] == '1') {
 
         toggle_outputs(HIGH);
@@ -108,8 +146,10 @@ void loop() {
         } else if (receivedData[8] == '0') {
 
         toggle_outputs(LOW);
-
+      
         }
+
+      */
 
     Serial.write("Validated\n");
 
@@ -146,15 +186,8 @@ void loop() {
 
     Serial.write('\n');
 
-    // Set the onboard LED according to the value of the first byte received, for testing
-
-  
-    
-
-
-  
-    
   }
+  
 } 
 
 
@@ -196,6 +229,8 @@ int serialReceive() {
           */
 
           status = 2;
+
+          receivedDataLength = dataIndex;
           
         } else {
 
@@ -324,7 +359,74 @@ void toggle_outputs(int toggle) {
     muxShield1.digitalWriteMS(3,i,toggle);
     muxShield2.digitalWriteMS(3,i,toggle);
   }
+  
 }
 
+
+void toggle_relays(unsigned int relayNumber, int state) {
+
+  if (relayNumber <= 96) {
+
+    if (relayNumber <= 16) {
+
+      relayNumber = relayNumber - 1;
+
+      muxShield1.digitalWriteMS(1, relayNumber, state);
+
+      return;
+      
+    }
+
+    if (relayNumber <= 32) {
+
+      relayNumber = relayNumber - 2;
+
+      muxShield1.digitalWriteMS(2, relayNumber - 15, state);
+
+      return;
+
+    }
+
+    if (relayNumber <= 48) {
+
+      relayNumber = relayNumber - 3;
+
+      muxShield1.digitalWriteMS(3, relayNumber - 30, state);
+
+      return;
+
+    }
+
+    if (relayNumber <= 64) {
+
+      relayNumber = relayNumber - 4;
+
+      muxShield2.digitalWriteMS(1, relayNumber - 45, state);
+
+      return;
+    }
+
+    if (relayNumber <= 80) {
+
+      relayNumber = relayNumber - 5;
+
+      muxShield2.digitalWriteMS(2, relayNumber - 60, state);
+
+      return;
+    }
+
+    if (relayNumber <= 96) {
+
+      relayNumber = relayNumber - 6;
+
+      muxShield2.digitalWriteMS(3, relayNumber - 75, state);
+
+      return;
+
+    }
+
+  }
+
+}
 
 

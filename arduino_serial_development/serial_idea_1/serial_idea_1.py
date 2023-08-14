@@ -198,45 +198,74 @@ def serial_communicate(data):
     return received_data[9:-1]
 
 
-start = default_timer()
+def test(reps, message_length):
+
+    start = default_timer()
+
+    # Send random data for testing
+
+    for i in range(reps):
+
+        data = ''.join(random.choice('10') for _ in range(message_length))  # Generate random data
+
+        '''
+        # Break transmission for testing
+        transmit = add_checksum(data)
+        print(transmit)
+        transmit = transmit[:-1]
+        print(transmit)
+        serial_communicate(transmit)
+        '''
+
+        # Transmit data, receive response and data transmitted by Arduino
+
+        '''
+        print("Sent:     ", data)
+        print("Received: ", serial_communicate(add_checksum(data)))
+        '''
 
 
-# Send random data for testing
 
-for i in range(10):
+        serial_communicate(add_checksum(data))
 
-    data = ''.join(random.choice('01') for _ in range(292))  # Generate random data
+        time.sleep(2)
 
-    '''
-    # Break transmission for testing
-    transmit = add_checksum(data)
-    print(transmit)
-    transmit = transmit[:-1]
-    print(transmit)
-    serial_communicate(transmit)
-    '''
+    
+    end = default_timer()
 
-    # Transmit data, receive response and data transmitted by Arduino
-
-    '''
-    print("Sent:     ", data)
-    print("Received: ", serial_communicate(add_checksum(data)))
-    '''
+    print('Upload successes:', upload_successes)
+    print('Upload failures:', upload_failures)
+    print('Download successes:', download_successes)
+    print('Download failures:', download_failures)
+    print('Time elapsed: %s seconds' % (end - start))
 
 
 
-    serial_communicate(add_checksum(data))
+'''
 
-    #time.sleep(0.07)
+def generate_code(relays_to_engage):
 
- 
-end = default_timer()
+    message = ''.join(('0') for _ in range(292))
 
-print('Upload successes:', upload_successes)
-print('Upload failures:', upload_failures)
-print('Download successes:', download_successes)
-print('Download failures:', download_failures)
-print('Time elapsed: %s seconds' % (end - start))
+    for i in message:
+
+        if (int(i) + 1) in relays_to_engage:
+
+            message[i] = "1"
+
+relays_to_engage = [1, 16, 17, 32, 33, 48]
+
+serial_communicate(generate_code(relays_to_engage))
+
+'''
+
+
+test(10, 96)
+
+
+
+
+
 
 
 # Close serial connection
