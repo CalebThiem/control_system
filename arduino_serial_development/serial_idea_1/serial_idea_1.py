@@ -23,16 +23,18 @@ data and before reading the Arduino's response, to give the Arduino time to proc
 
 """
 
-
 import serial
 import time
 import random
 import binascii
-
 from timeit import default_timer
 
-print_status_messages = 1
+upload_successes = 0
+upload_failures = 0
+download_successes = 0
+download_failures = 0
 
+print_status_messages = 1
 
 def add_checksum(data):
 
@@ -83,18 +85,6 @@ def validate_checksum(received_data):
         return 0
 
 
-# Open serial connection
-
-ser = serial.Serial('/dev/ttyACM0', 460800)  # replace '/dev/ttyACM0' with your serial port
-
-# Wait for the Arduino to reset
-
-time.sleep(2)
-
-upload_successes = 0
-upload_failures = 0
-download_successes = 0
-download_failures = 0
 
 # Sends data, receives confirmaiton/failure message, receives and validates data sent from recipient
 
@@ -224,11 +214,9 @@ def test(reps, message_length):
         print("Received: ", serial_communicate(add_checksum(data)))
         '''
 
-
-
         serial_communicate(add_checksum(data))
 
-        time.sleep(2)
+        time.sleep(0.5)
 
     
     end = default_timer()
@@ -238,6 +226,14 @@ def test(reps, message_length):
     print('Download successes:', download_successes)
     print('Download failures:', download_failures)
     print('Time elapsed: %s seconds' % (end - start))
+
+
+
+
+
+
+
+
 
 
 
@@ -258,6 +254,15 @@ relays_to_engage = [1, 16, 17, 32, 33, 48]
 serial_communicate(generate_code(relays_to_engage))
 
 '''
+
+# Open serial connection
+
+ser = serial.Serial('/dev/ttyACM0', 460800)  # replace '/dev/ttyACM0' with your serial port
+
+# Wait for the Arduino to reset
+
+time.sleep(2)
+
 
 
 test(10, 96)

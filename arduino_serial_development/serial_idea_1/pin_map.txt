@@ -1,5 +1,0 @@
-relay1_high muxShield1.digitalWriteMS(1,0,HIGH);
-relay1_low  muxShield1.digitalWriteMS(1,0,LOW);
-
-relay2_high muxShield1.digitalWriteMS(1,1,HIGH);
-relay2_low  muxShield1.digitalWriteMS(1,1,LOW);
