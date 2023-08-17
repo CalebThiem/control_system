@@ -28,7 +28,7 @@ This prevents flickering of the pin states when using more than one board.
 
 #include <FastCRC.h> // Library for CRC hash function
 
-#include <MuxShield.h>
+#include <MuxShield.h> // Library for the Mux Shield 2
 
 FastCRC32 CRC32;
 
@@ -52,8 +52,8 @@ int IO21 = A3;
 int IO22 = A4;
 int IO23 = A5;
 
-int OUTMD1 = 100;
-int OUTMD2 = 100;
+int OUTMD1 = 200; // Nonexistant pin, hardware pins tied to 5V
+int OUTMD2 = 200;
 
 int IOS11 = 200;
 int IOS12 = 200;
@@ -121,34 +121,7 @@ void setup() {
 
 void loop() {
 
-  
-
-
     if (serialReceive()) {
-
-      /*
-
-      Serial.print(receivedDataLength);
-
-      Serial.print("\n");
-
-      Serial.print(receivedData);
-
-      Serial.print("\n");  
-
-      */
-
-      /*
-
-      Serial.print("Received data: ");
-
-      Serial.print(receivedData);
-
-      Serial.write("\n");
-
-      */
-
-      
 
       unsigned int received_data_length = strlen(receivedData);
 
@@ -159,8 +132,6 @@ void loop() {
           mux_shield_1_control(i - 7, receivedData[i] - '0');
 
         }
-
-        // delay(10);
 
         for (unsigned int i = 48; i < 96 + 8; i++) {
 
@@ -178,8 +149,6 @@ void loop() {
 
         }
 
-        // delay(10);
-
         for (unsigned int i = 48; i < received_data_length; i++) {
 
           mux_shield_2_control(i - 7, receivedData[i] - '0');
@@ -194,49 +163,10 @@ void loop() {
 
           mux_shield_1_control(i - 7, receivedData[i] - '0');
 
-          // delay(10);
-
         }
 
       }
 
-      
-
-      /*
-
-      for (int i = 48; i <= 96; i++) {
-
-        mux_shield_2_control(i, HIGH);
-      }
-
-      delay(100);
-
-      
-      
-
-      for (int i = 0; i <= 48; i++) {
-
-        mux_shield_1_control(i, HIGH);
-      }
-
-      delay(100);
-
-      */
-    
-
-      /*
-
-        if (receivedData[8] == '1') {
-
-        toggle_outputs(HIGH);
-
-        } else if (receivedData[8] == '0') {
-
-        toggle_outputs(LOW);
-      
-        }
-
-      */
 
       Serial.write("Validated\n");
 
@@ -304,12 +234,6 @@ bool serialReceive() {
 
             if (verify_checksum(receivedData) == 2) {
 
-              /*
-              Serial.print("Checksum verified");
-              Serial.print('\n');
-              Serial.print("Serial Receive: Returning true\n");
-              */
-
               return true;
 
             } else {
@@ -349,6 +273,7 @@ bool serialReceive() {
   return false;
 
 }
+
 
 // Checks the CRC32 checksum in the first 8 bytes of a string (zero padded hexadecimal), returns 2 if successful
 
@@ -404,6 +329,7 @@ int verify_checksum(char* message) {
 
 }
 
+
 // Adds a checksum of the information in an array (the eigth byte onwards) to the beginning 8 bytes of the array
 
 void generate_checksum(char * message) {
@@ -448,8 +374,6 @@ void toggle_outputs(int toggle) {
   {
     muxShield1.digitalWriteMS(1,i,toggle);
 
-    delay(10);
-
     muxShield2.digitalWriteMS(1,i,toggle);
   }
   
@@ -457,8 +381,6 @@ void toggle_outputs(int toggle) {
   for (int i=0; i<16; i++)
   {
     muxShield1.digitalWriteMS(2,i,toggle);
-
-    delay(10);
 
     muxShield2.digitalWriteMS(2,i,toggle);
   }
@@ -468,11 +390,7 @@ void toggle_outputs(int toggle) {
   {
     muxShield1.digitalWriteMS(3,i,toggle);
 
-    delay(10);
-
     muxShield2.digitalWriteMS(3,i,toggle);
-
-    delay(10);
   }
   
 }
@@ -486,8 +404,6 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
 
     muxShield1.digitalWriteMS(1, relayNumber, state);
 
-    // delay(10);
-
     return;
 
    
@@ -500,8 +416,6 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
 
     muxShield1.digitalWriteMS(2, relayNumber - 15, state);
 
-    // delay(10);
-
     return;
 
   }
@@ -512,14 +426,12 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
 
     muxShield1.digitalWriteMS(3, relayNumber - 30, state);
 
-    // delay(10);
-
     return;
 
   }
 
-
 }
+
 
 void mux_shield_2_control(unsigned int relayNumber, int state) {
 
@@ -528,8 +440,6 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     relayNumber = relayNumber - 4;
 
     muxShield2.digitalWriteMS(1, relayNumber - 45, state);
-
-    // delay(10);
 
     return;
   }
@@ -540,8 +450,6 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
 
     muxShield2.digitalWriteMS(2, relayNumber - 60, state);
 
-    // delay(10);
-
     return;
   }
 
@@ -550,8 +458,6 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     relayNumber = relayNumber - 6;
 
     muxShield2.digitalWriteMS(3, relayNumber - 75, state);
-
-    // delay(10);
 
     return;
 

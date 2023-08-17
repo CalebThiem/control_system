@@ -8,7 +8,7 @@ from timeit import default_timer
 
 from arduino_control import add_checksum, validate_checksum, serial_communicate, test
 
-ser = serial.Serial('/dev/ttyACM1', 460800)  # replace '/dev/ttyACM0' with your serial port
+ser = serial.Serial('/dev/ttyACM0', 460800)  # replace '/dev/ttyACM0' with your serial port
 
 time.sleep(2)
 
