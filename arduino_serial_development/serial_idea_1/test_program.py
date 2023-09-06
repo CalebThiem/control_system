@@ -40,6 +40,7 @@ for i in range(10):
 
 '''
 
-test(ser, 100, 292, 0)
+print(test(ser, 10, 170, 0, "true"))
+
 
 ser.close()

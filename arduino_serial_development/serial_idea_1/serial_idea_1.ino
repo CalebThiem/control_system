@@ -92,6 +92,10 @@ char message[MAX_MESSAGE_LENGTH + 1];
 
 unsigned int dataIndex = 0;
 
+void setMuxShieldPins(char * receivedData);
+
+void sendMessage(char * message);
+
 bool serialReceive(void);
 
 int verify_checksum(char * message);
@@ -121,91 +125,128 @@ void setup() {
 
 void loop() {
 
-    if (serialReceive()) {
+  if (serialReceive()) {
 
-      unsigned int received_data_length = strlen(receivedData);
+    if (receivedData[8] == '?') {
 
-      if (received_data_length >= 96 + 8) {
-
-        for (unsigned int i = 8; i < 48 + 8; i++) {
-
-          mux_shield_1_control(i - 7, receivedData[i] - '0');
-
-        }
-
-        for (unsigned int i = 48; i < 96 + 8; i++) {
-
-          mux_shield_2_control(i - 7, receivedData[i] - '0');
-
-        }
-        
-      }
-
-      if ((received_data_length > 48 + 8) && (received_data_length < 96 + 8)) {
-
-        for (unsigned int i = 8; i < 48 + 8; i++) {
-
-          mux_shield_1_control(i - 7, receivedData[i] - '0');
-
-        }
-
-        for (unsigned int i = 48; i < received_data_length; i++) {
-
-          mux_shield_2_control(i - 7, receivedData[i] - '0');
-
-        }
-
-      }
-
-      if (received_data_length <= 48 + 8) {
-
-        for (unsigned int i = 8; i < received_data_length; i++) {
-
-          mux_shield_1_control(i - 7, receivedData[i] - '0');
-
-        }
-
-      }
-
+      // Send confirmation message to sender
 
       Serial.write("Validated\n");
 
-      // Reset the array used for outgoing transmissions to null bytes
-      // Ensures that transmission will always be null terminated
+      sendMessage(message);
 
-      for (int i = 0; i <= MAX_MESSAGE_LENGTH; i++) { 
-      
-        message[i] = '\0';
+    } else {
 
-      }
+      setMuxShieldPins(receivedData);
 
-      // Populate outgoiong transmission array with random data for testing (eighth byte and onward)
+      // Send confirmation message to sender
 
-      for (int i = 7; i <= 292; i++) {
+      Serial.write("Validated\n");
 
-        message[i] = ((random(0, 9)) + '0');
+    }
 
-      }
-
-      // Populate the first 8 bytes of the outgoing transmission array with a checksum of the rest
-
-      generate_checksum(message);
-
-      // Transmit character that signifies start of transmission
-
-      Serial.write('<');
-
-      Serial.write(message);
-
-      // Transmit character that signifies end of transmission
-
-      Serial.write('>');
-
-      Serial.write('\n');
+    // Send confirmation message to sender
 
   }
   
 } 
+
+void setMuxShieldPins(char * receivedData) {
+
+    // Set MuxShield2 pins with memeory nonesene protection
+
+    unsigned int received_data_length = strlen(receivedData);
+
+    // Check if the control array is greater than the number of MuxShield2 pins, set pins to specified values
+
+    if (received_data_length >= 96 + 8) {
+
+      // Set first MuxShield2 pins
+
+      for (unsigned int i = 8; i < 48 + 8; i++) {
+
+        mux_shield_1_control(i - 7, receivedData[i] - '0');
+
+      }
+
+      // Set second MuxShield2 pins
+
+      for (unsigned int i = 48; i < 96 + 8; i++) {
+
+        mux_shield_2_control(i - 7, receivedData[i] - '0');
+
+      }
+      
+    }
+
+    // Check if the first MuxShield2 pins are all used, but the second's aren't, set pins to specified values
+
+    if ((received_data_length > 48 + 8) && (received_data_length < 96 + 8)) {
+
+      for (unsigned int i = 8; i < 48 + 8; i++) {
+
+        mux_shield_1_control(i - 7, receivedData[i] - '0');
+
+      }
+
+      for (unsigned int i = 48; i < received_data_length; i++) {
+
+        mux_shield_2_control(i - 7, receivedData[i] - '0');
+
+      }
+
+    }
+
+    // Check if the first MuxShield's pins aren't all used, set pins to specified values
+
+    if (received_data_length <= 48 + 8) {
+
+      for (unsigned int i = 8; i < received_data_length; i++) {
+
+        mux_shield_1_control(i - 7, receivedData[i] - '0');
+
+      }
+
+    }
+
+}
+
+void sendMessage(char * message) {
+
+  // Reset the array used for outgoing transmissions to null bytes
+  // Ensures that transmission will always be null terminated
+
+  for (int i = 0; i <= MAX_MESSAGE_LENGTH; i++) { 
+  
+    message[i] = '\0';
+
+  }
+
+  // Populate outgoiong transmission array with random data for testing (eighth byte and onward)
+
+  for (int i = 7; i <= 292; i++) {
+
+    message[i] = ((random(0, 9)) + '0');
+
+  }
+
+  // Populate the first 8 bytes of the outgoing transmission array with a checksum of the rest
+
+  generate_checksum(message);
+
+  // Transmit character that signifies start of transmission
+
+  Serial.write('<');
+
+  Serial.write(message);
+
+  // Transmit character that signifies end of transmission
+
+  Serial.write('>');
+
+  Serial.write('\n');
+
+}
 
 
 // Communicate via serial connection. Retuns 2 if checksum is verified
@@ -220,13 +261,17 @@ bool serialReceive() {
 
     if (receivedChar == START_MARKER) { // Check for transmission start
 
+    // Start of reception
+
       while (true) { // Reads from the serial buffer until the end character is found, or the maxumum length is reached
 
         if (Serial.available() > 0) {
 
           receivedChar = Serial.read(); // Read a character from the serial buffer
 
-          if (receivedChar == END_MARKER) { // End of transmission
+          if (receivedChar == END_MARKER) { 
+            
+            // End of transmission:
             
             receivedData[dataIndex] = '\0';  // Null-terminate the data
 
@@ -245,6 +290,8 @@ bool serialReceive() {
             }
 
           }
+
+          // Reception ongoing:
 
           if (dataIndex < MAX_MESSAGE_LENGTH) { // Writes the received char to the message array
 

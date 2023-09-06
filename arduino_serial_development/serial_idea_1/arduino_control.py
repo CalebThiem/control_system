@@ -20,37 +20,37 @@ from timeit import default_timer
 
 def add_checksum(data):
 
-    # Calculate the CRC32 checksum and format it as a zero-padded 8-digit hexadecimal string
+  # Calculate the CRC32 checksum and format it as a zero-padded 8-digit hexadecimal string
 
-    checksum = format(binascii.crc32(data.encode()) & 0xffffffff, '08x')
+  checksum = format(binascii.crc32(data.encode()) & 0xffffffff, '08x')
 
-    # Return the checksum followed by the original data
+  # Return the checksum followed by the original data
 
-    checksum = checksum.upper()
+  checksum = checksum.upper()
 
-    return checksum + data
+  return checksum + data
 
 # Checks a zero-padded HEX CRC32 checksum in the first eight characters of a string beginning with "<" and ending with ">"
 
 def validate_checksum(received_data):
 
-    # Isolate the first 8 bytes of the transmission (not including the start character "<")
+  # Isolate the first 8 bytes of the transmission (not including the start character "<")
 
-    checksum = received_data[1:9]
+  checksum = received_data[1:9]
 
-    # Isolate the rest of the transmission (not including the end character ">")
+  # Isolate the rest of the transmission (not including the end character ">")
 
-    message = received_data[9:-1]
+  message = received_data[9:-1]
 
-    # Calculate the checksum of the message
+  # Calculate the checksum of the message
 
-    calculated_checksum = format(binascii.crc32(message.encode()) & 0xffffffff, '08x')
+  calculated_checksum = format(binascii.crc32(message.encode()) & 0xffffffff, '08x')
 
-    # Compare locally calculated and transmitted checksums
+  # Compare locally calculated and transmitted checksums
 
-    if calculated_checksum.upper() == checksum:
+  if calculated_checksum.upper() == checksum:
 
-        return "checksum_validated"
+      return "checksum_validated"
 
 
 
@@ -58,96 +58,129 @@ def validate_checksum(received_data):
 
 def serial_communicate(serial_port, data):
 
-    # Send the data
+  # Send the data
 
-    # Send message start character
+  # Send message start character
 
-    serial_port.write(b'<')
+  serial_port.write(b'<')
 
-    # Transmit data one character at a time
+  # Transmit data one character at a time
 
-    for char in data:
+  for char in data:
 
-        serial_port.write(char.encode())
+      serial_port.write(char.encode())
 
-    # Transmit message end character
+  # Transmit message end character
 
-    serial_port.write(b'>')
+  serial_port.write(b'>')
 
-    # Wait for the Arduino to send back the data
+  # Wait for the Arduino to send success/failure message
 
-    received_data = serial_port.readline().decode().strip()
+  received_data = serial_port.readline().decode().strip()
 
-    # Verify the data
+  # Verify the data
 
-    if received_data == "Validated":
-        
-        pass
+  if received_data == "ChecksumFailed":
 
-    if received_data == "ChecksumFailed":
+      return "upload_failed"
 
-        return "upload_failed"
+  if received_data != "Validated":
+    
+    return "upload_failed"
 
-    received_data = serial_port.readline().decode().strip()
+  if received_data == "Validated":
 
-    # Check for message start and end characters
+    return "upload_success"
 
-    if received_data[0] == "<" and received_data[-1] == ">":
 
-        if validate_checksum(received_data) != "checksum_validated":
 
-            return "download_failed"
 
-    # Return message body (ninth character and onwards, 0 - 8 is checksum)
+def receive_data(serial_port):
 
-    return received_data[9:-1]
+  received_data = serial_port.readline().decode().strip()
+
+  # Check for message start and end characters
+
+  if received_data[0] == "<" and received_data[-1] == ">":
+
+    if validate_checksum(received_data) != "checksum_validated":
+
+      return "download_failed"
+
+  # Return message body (ninth character and onwards, 0 - 8 is checksum)
+
+  return received_data[9:-1]
+
+
 
 # Tests functions above
 
-def test(serial_port, reps, message_length, sleep_time):
+def test(serial_port, reps, message_length, sleep_time, print_output):
 
-    upload_successes = 0
-    upload_failures = 0
-    download_successes = 0
-    download_failures = 0
+  upload_successes = 0
+  upload_failures = 0
+  download_successes = 0
+  download_failures = 0
 
-    start = default_timer()
+  start = default_timer()
 
-    # Send random data for testing
+  # Send random data for testing
 
-    for i in range(reps):
+  for i in range(reps):
 
-        data = ''.join(random.choice('10') for _ in range(message_length))  # Generate random data
+    # Generate random data
 
-        # Transmit data, receive response and data transmitted by Arduino
+    data = ''.join(random.choice('10') for _ in range(message_length))  
 
-        message = serial_communicate(serial_port, add_checksum(data))
-        
-        # message = serial_communicate(serial_port, data)
+    # Transmit data, receive response transmitted by Arduino
 
-        if message == "upload_failed":
+    message = serial_communicate(serial_port, add_checksum(data))
 
-            upload_failures += 1
+    # Comment line above and uncomment line below to test Arduino checksum validation
+    
+    # message = serial_communicate(serial_port, data)
 
-        elif message == "download_failed":
+    if message == "upload_failed":
 
-            download_failures += 1
+        upload_failures += 1
 
-        else:
+    else:
 
-            upload_successes += 1
+        upload_successes += 1
 
-            download_successes += 1
+    if print_output == "true":
 
-        time.sleep(sleep_time)
+      print(message)
 
-    end = default_timer()
+    # Request data transmission from Arduino
 
-    print('Upload successes:', upload_successes)
-    print('Upload failures:', upload_failures)
-    print('Download successes:', download_successes)
-    print('Download failures:', download_failures)
-    print('Time elapsed: %s seconds' % (end - start))
+    serial_communicate(serial_port, add_checksum("?"))
+
+    message = receive_data(serial_port)
+
+    if message == "download_failed":
+
+      download_failuers += 1
+
+    else:
+
+      download_successes += 1
+
+    if print_output == "true":
+
+      print(message)
+  
+
+
+    time.sleep(sleep_time)
+
+  end = default_timer()
+
+  print('Upload successes:', upload_successes)
+  print('Upload failures:', upload_failures)
+  print('Download successes:', download_successes)
+  print('Download failures:', download_failures)
+  print('Time elapsed: %s seconds' % (end - start))
 
 
 '''
