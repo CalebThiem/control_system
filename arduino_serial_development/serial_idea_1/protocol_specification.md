@@ -22,11 +22,12 @@ The next 8 bytes comprise a zero-padded, capitalised hexadecimal CRC32 checksum 
 
 The last byte is a '>'. This signifies the end of the message.
 
-Upon receiving a properly formatted message, the Arduino will respond with one of the following transmissions:
+Upon receiving a properly formatted message, the Arduino will respond with one of the following ASCII text transmissions:
 
     "Verified" is sent if the checksum matches the computed checksum
 
     "ChecksumFailed" is sent if the checksum does not match the computed checksum
 
-    If the first character after the checksum was a '?', the Arduino will then send a message of its own, with identical formatting.
+
+If the first character after the checksum was a '?', the Arduino will then send a message of its own, with identical formatting.
 
