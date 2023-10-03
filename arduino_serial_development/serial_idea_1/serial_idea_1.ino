@@ -90,6 +90,8 @@ char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminat
 
 char message[MAX_MESSAGE_LENGTH + 1];
 
+char analogReadDecimalTemp[5];
+
 unsigned int dataIndex = 0;
 
 void setMuxShieldPins(char * receivedData);
@@ -247,6 +249,22 @@ void sendMessage(char * message) {
   Serial.write('\n');
 
 }
+
+// Function that takes a pin number and memory address, performs an analog read on the pin, 
+// and writes its value as a four-character decimal number to the provided memory address 
+
+void analogReadDecimal(char * analogReadDecimalTemp, pinNumber) {
+
+  unsigned long pinValue = analogRead(pinNumber);
+
+  sprintf(analogReadDecimalTemp, "%04d", pinValue);
+
+  
+
+
+}
+
+
 
 
 // Communicate via serial connection. Retuns 2 if checksum is verified
