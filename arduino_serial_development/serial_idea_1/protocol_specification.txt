@@ -34,11 +34,13 @@ a message of its own, with identical formatting.
 
 This message is composed of 24 "1" or "0" characters, with each consecutive character representing the state of a digital input pin, representing pins 30 through 53, inclusive. Following this string of 1s and 0s is a dash, followed by ten dash-seperated four digit numbers, each holding the value (0 to 1023) of an analog input pin, beginning with A6 and ending with A15. 
 
+
 Input example:
 
 <8758F833101010111000010101010011110000101010101010>
 
 <checksum-----------output pin states-------------->
+
 
 Output example:
 
@@ -47,5 +49,23 @@ Output example:
 <checksum---digital pin states--- -A6- -A7- -A8- -A9- -A10 -A11 -A12 -A13 -A14 -A15>
 
 
+Full communication example:
 
+Sent: <8758F833101010111000010101010011110000101010101010>
+
+Received: Validated\n
+
+Sent: <6464C2B0?>
+
+Received: Validated\n
+
+Received: <8F147D37111111111111111111111111-0530-0505-0494-0471-0434-0385-0343-0327-0293-0242>
+
+Sent: <ED82CD11abcx>
+
+Received: ChecksumFailed\n
+
+Sent: <ED82CD11abcd>
+
+Received: Validated\n
 

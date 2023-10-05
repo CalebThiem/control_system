@@ -148,8 +148,6 @@ char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminat
 
 char message[MAX_MESSAGE_LENGTH + 1];
 
-char analogReadDecimalTemp[5];
-
 unsigned int dataIndex = 0;
 
 void setMuxShieldPins(char * receivedData);
@@ -348,33 +346,12 @@ void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPi
 
     index += 1;
 
-    // 0-pad the data
- 
-    if (analogPinValue < 10) {
+    // Write the  0-padded data to the result array
 
-      sprintf(result + index, "000%d", analogPinValue);
+    sprintf(result + index, "%04d", analogPinValue);
 
-      index += 4;
+    index += 4;
 
-    } else if (analogPinValue < 100) {
-
-      sprintf(result + index, "00%d", analogPinValue);
-
-      index += 4;
-
-    } else if (analogPinValue < 1000) {
-
-      sprintf(result + index, "0%d", analogPinValue);
-
-      index += 4;
-
-    } else {
-
-      sprintf(result + index, "%d", analogPinValue);
-
-      index += 4;
-
-    }
   }
   
   result[index] = '\0';  // Null-terminate the string
