@@ -146,8 +146,6 @@ MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22
 
 char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
 
-// unsigned int receivedDataLength = 0;
-
 char message[MAX_MESSAGE_LENGTH + 1];
 
 char analogReadDecimalTemp[5];
@@ -171,9 +169,11 @@ void mux_shield_1_control(unsigned int relayNumber, int state);
 void mux_shield_2_control(unsigned int relayNumber, int state);
 
 const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+
 const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
 
 int digitalReadPinsLength = sizeof(digitalReadPins)/sizeof(digitalReadPins[0]);
+
 int analogReadPinsLength = sizeof(analogReadPins)/sizeof(analogReadPins[0]);
 
 
@@ -189,11 +189,15 @@ void setup() {
   muxShield2.setMode(3,DIGITAL_OUT);
   
   for (int i = 0; i < digitalReadPinsLength; i++) {
+
     pinMode(digitalReadPins[i], INPUT_PULLUP);
+
   }
 
   for (int i = 0; i < analogReadPinsLength; i++) {
+
     pinMode(analogReadPins[i], INPUT);
+
   }
 
     Serial.begin(460800);
@@ -293,27 +297,6 @@ void setMuxShieldPins(char * receivedData) {
 
 
 void sendMessage(char * message) {
-
-  /*
-
-  // Reset the array used for outgoing transmissions to null bytes
-  // Ensures that transmission will always be null terminated
-
-  for (int i = 0; i <= MAX_MESSAGE_LENGTH; i++) { 
-  
-    message[i] = '\0';
-
-  }
-
-  // Populate outgoiong transmission array with random data for testing (eighth byte and onward)
-
-  for (int i = 7; i <= 292; i++) {
-
-    message[i] = ((random(0, 9)) + '0');
-
-  }
-
-  */
 
   // Populate the first 8 bytes of the outgoing transmission array with a checksum of the rest
 
