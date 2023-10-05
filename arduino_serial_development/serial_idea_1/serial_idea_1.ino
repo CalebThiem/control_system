@@ -1,17 +1,78 @@
 /*
-Written by Caleb Thiem and GPT-4. Receives up to 300 characters (stable), 1 or 0, from a PC via serial communication to 
-control output pins. The position of the character denotes the pin number, and the value the pin state. 
-It then sends back the received data for verification.
+Written by Caleb Thiem. 
 
-This script receives a series of binary values from a PC via serial communication. 
-The data received is a string of characters, each of which is either '0' or '1'. 
-The position of each character in the string corresponds to a specific pin on the Arduino, 
-and the value of the character ('0' or '1') corresponds to the desired state of that pin (LOW or HIGH, respectively).
+# Description #
 
-The script reads the data from the serial buffer, processes it, and then sends it's own data back to the PC. 
-The script uses start and end markers to frame the data, and includes error checking to ensure that the data is received correctly.
+Communicates with an Arduino over serial, sending and receiving strings up to 300 characters in length. 
 
-The script uses the Arduino's built-in Serial library to handle the serial communication. The baud rate is set to 460800.
+Advantages: easy to understand and modify
+
+Disadvantages: inefficient
+
+# General Behaviour #
+
+# Baud Rate #
+
+Arduino opens serial port at 460800 baud.
+
+# Serial Transmission #
+
+Message is up to 300 bytes long. Each byte represents an ASCII text character.
+
+The first byte is a '<'. This signifies the start of the message. 
+
+The next 8 bytes comprise a zero-padded, capitalised hexadecimal CRC32 checksum of the rest of the message, excluding the last character.
+
+The last byte is a '>'. This signifies the end of the message.
+
+Upon receiving a properly formatted message, the Arduino will respond with one of the following ASCII text transmissions:
+
+    "Verified" is sent if the checksum matches the computed checksum
+
+    "ChecksumFailed" is sent if the checksum does not match the computed checksum
+
+
+If the first character after the checksum was a '?', the Arduino will then send
+a message of its own, with identical formatting.
+
+This message is composed of 24 "1" or "0" characters, with each consecutive character representing the state of a digital input pin, representing pins 30 through 53, inclusive. Following this string of 1s and 0s is a dash, followed by ten dash-seperated four digit numbers, each holding the value (0 to 1023) of an analog input pin, beginning with A6 and ending with A15. 
+
+
+Input example:
+
+<8758F833101010111000010101010011110000101010101010>
+
+<checksum-----------output pin states-------------->
+
+
+Output example:
+
+<BC90042C111111111111111111111111-0473-0526-0644-0622-0636-0654-0705-0714-0715-0725>
+
+<checksum---digital pin states--- -A6- -A7- -A8- -A9- -A10 -A11 -A12 -A13 -A14 -A15>
+
+
+Full communication example:
+
+Sent: <8758F833101010111000010101010011110000101010101010>
+
+Received: Validated\n
+
+Sent: <6464C2B0?>
+
+Received: Validated\n
+
+Received: <8F147D37111111111111111111111111-0530-0505-0494-0471-0434-0385-0343-0327-0293-0242>
+
+Sent: <ED82CD11abcx>
+
+Received: ChecksumFailed\n
+
+Sent: <ED82CD11abcd>
+
+Received: Validated\n
+
+
 
 IMPORTANT!
 
@@ -21,7 +82,7 @@ int _shiftReg1[16]={0};
 int _shiftReg2[16]={0};
 int _shiftReg3[16]={0};
 
-from the header of MuxShield.cpp to the definition of the MuxShield class (private) in MuxShield.h. 
+from the header of MuxShield.cpp (in the MuxShield library) to the definition of the MuxShield class (private) in MuxShield.h. 
 This prevents flickering of the pin states when using more than one board.
 
 */
@@ -136,7 +197,8 @@ void setup() {
   }
 
     Serial.begin(460800);
-  }
+}
+
 
 void loop() {
 
@@ -167,6 +229,7 @@ void loop() {
   }
   
 } 
+
 
 void setMuxShieldPins(char * receivedData) {
 
@@ -228,6 +291,7 @@ void setMuxShieldPins(char * receivedData) {
 
 }
 
+
 void sendMessage(char * message) {
 
   /*
@@ -269,35 +333,39 @@ void sendMessage(char * message) {
 
 }
 
-// Function that takes a pin number and memory address, performs an analog read on the pin, 
-// and writes its value as a four-character decimal number to the provided memory address 
 
-void analogReadDecimal(char * analogReadDecimalTemp, int pinNumber) {
-
-  unsigned long pinValue = analogRead(pinNumber);
-
-  sprintf(analogReadDecimalTemp, "%04d", pinValue);
-
-}
+// Read the values of digital and analog pins and write their values to a provided char array
 
 void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPins, int analogReadPinsLength, char* result) {
 
+  // Start writing from the ninth character in the array (first eight characters will be occupied by the checksum)
+
   int index = 8;
   
+  // Read each digital input pin and write a 1 to the array if HIGH, and 0 if LOW
+
   for (int i = 0; i < digitalReadPinsLength; i++) {
 
     int digitalPinValue = digitalRead(digitalReadPins[i]);
 
     result[index++] = (digitalPinValue == HIGH) ? '1' : '0';
   }
+
+  // Read each analog input pin (returns a 10-bit binary number) and write its value to the array as a 0-padded decimal number, with each number seperated by a dash
   
   for (int j = 0; j < analogReadPinsLength; j++) {
 
+    // Read the input pin
+
     int analogPinValue = analogRead(analogReadPins[j]);
+
+    // Add a dash
 
     sprintf(result + index, "%c", '-');
 
     index += 1;
+
+    // 0-pad the data
  
     if (analogPinValue < 10) {
 
@@ -329,8 +397,6 @@ void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPi
   result[index] = '\0';  // Null-terminate the string
 
 }
-
-
 
 
 // Communicate via serial connection. Retuns 2 if checksum is verified
@@ -434,20 +500,6 @@ int verify_checksum(char* message) {
 
   unsigned long calculated_checksum = CRC32.crc32((uint8_t*)&message[8], strlen(&message[8]));
 
-  /*
-  
-  Serial.print("Received message: ");
-  Serial.print(message);
-  Serial.print("\n");
-  Serial.print("Received Checksum: ");
-  Serial.print(received_checksum);
-  Serial.print("\n");
-  Serial.print("Calculated Checksum: ");
-  Serial.print(calculated_checksum, HEX);
-  Serial.print("\n");
-  
-  */
-
   // Compare the received and calculated checksums
 
   if (received_checksum_value == calculated_checksum) {
@@ -496,35 +548,6 @@ void generate_checksum(char * message) {
 
 }
 
-
-
-void toggle_outputs(int toggle) {
-
-    //loop to toggle all IO 1 outputs
-  for (int i=0; i<16; i++)
-  {
-    muxShield1.digitalWriteMS(1,i,toggle);
-
-    muxShield2.digitalWriteMS(1,i,toggle);
-  }
-  
-  //loop to toggle all IO 2 outputs
-  for (int i=0; i<16; i++)
-  {
-    muxShield1.digitalWriteMS(2,i,toggle);
-
-    muxShield2.digitalWriteMS(2,i,toggle);
-  }
-  
-  //loop to toggle all IO 3 outputs
-  for (int i=0; i<16; i++)
-  {
-    muxShield1.digitalWriteMS(3,i,toggle);
-
-    muxShield2.digitalWriteMS(3,i,toggle);
-  }
-  
-}
 
 
 void mux_shield_1_control(unsigned int relayNumber, int state) {
