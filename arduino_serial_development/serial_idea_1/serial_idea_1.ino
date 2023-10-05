@@ -32,41 +32,40 @@ This prevents flickering of the pin states when using more than one board.
 
 FastCRC32 CRC32;
 
-//Initialize the Mux Shield
+//Initialize the first MuxShield2
 
-int S10 = 2;
-int S11 = 3;
-int S12 = 4;
-int S13 = 5;
-
-int S20 = 6;
-int S21 = 7;
-int S22 = 8;
-int S23 = 9;
+int S10 = 22;
+int S11 = 23;
+int S12 = 24;
+int S13 = 25;
 
 int IO11 = A0;
 int IO12 = A1;
 int IO13 = A2;
 
-int IO21 = A3;
-int IO22 = A4;
-int IO23 = A5;
-
-int OUTMD1 = 200; // Nonexistant pin, hardware pins tied to 5V
-int OUTMD2 = 200;
-
+int OUTMD1 = 200; // Nonexistant pins, hardware pins tied to 5V
 int IOS11 = 200;
 int IOS12 = 200;
 int IOS13 = 200; 
 
+MuxShield muxShield1(S10, S11, S12, S13, OUTMD1, IOS11, IOS12, IOS13, IO11, IO12, IO13);
+
+// Initialize the second MuxShield2
+
+int S20 = 26;
+int S21 = 27;
+int S22 = 28;
+int S23 = 29;
+
+int IO21 = A3;
+int IO22 = A4;
+int IO23 = A5;
+
+int OUTMD2 = 200; // Nonexistant pins, hardware pins tied to 5V
 int IOS21 = 200;
 int IOS22 = 200;
 int IOS23 = 200;
 
-
-
-
-MuxShield muxShield1(S10, S11, S12, S13, OUTMD1, IOS11, IOS12, IOS13, IO11, IO12, IO13);
 MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22, IO23);
 
 // Define characters to signify beginning and end of transmission
@@ -110,6 +109,12 @@ void mux_shield_1_control(unsigned int relayNumber, int state);
 
 void mux_shield_2_control(unsigned int relayNumber, int state);
 
+const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
+
+int digitalReadPinsLength = sizeof(digitalReadPins)/sizeof(digitalReadPins[0]);
+int analogReadPinsLength = sizeof(analogReadPins)/sizeof(analogReadPins[0]);
+
 
 void setup() {
 
@@ -121,11 +126,21 @@ void setup() {
   muxShield2.setMode(1,DIGITAL_OUT);  
   muxShield2.setMode(2,DIGITAL_OUT);
   muxShield2.setMode(3,DIGITAL_OUT);
+  
+  for (int i = 0; i < digitalReadPinsLength; i++) {
+    pinMode(digitalReadPins[i], INPUT_PULLUP);
+  }
 
-  Serial.begin(460800);
-}
+  for (int i = 0; i < analogReadPinsLength; i++) {
+    pinMode(analogReadPins[i], INPUT);
+  }
+
+    Serial.begin(460800);
+  }
 
 void loop() {
+
+  readPins(digitalReadPins, digitalReadPinsLength, analogReadPins, analogReadPinsLength, message);
 
   if (serialReceive()) {
 
@@ -215,6 +230,8 @@ void setMuxShieldPins(char * receivedData) {
 
 void sendMessage(char * message) {
 
+  /*
+
   // Reset the array used for outgoing transmissions to null bytes
   // Ensures that transmission will always be null terminated
 
@@ -231,6 +248,8 @@ void sendMessage(char * message) {
     message[i] = ((random(0, 9)) + '0');
 
   }
+
+  */
 
   // Populate the first 8 bytes of the outgoing transmission array with a checksum of the rest
 
@@ -253,14 +272,61 @@ void sendMessage(char * message) {
 // Function that takes a pin number and memory address, performs an analog read on the pin, 
 // and writes its value as a four-character decimal number to the provided memory address 
 
-void analogReadDecimal(char * analogReadDecimalTemp, pinNumber) {
+void analogReadDecimal(char * analogReadDecimalTemp, int pinNumber) {
 
   unsigned long pinValue = analogRead(pinNumber);
 
   sprintf(analogReadDecimalTemp, "%04d", pinValue);
 
-  
+}
 
+void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPins, int analogReadPinsLength, char* result) {
+
+  int index = 8;
+  
+  for (int i = 0; i < digitalReadPinsLength; i++) {
+
+    int digitalPinValue = digitalRead(digitalReadPins[i]);
+
+    result[index++] = (digitalPinValue == HIGH) ? '1' : '0';
+  }
+  
+  for (int j = 0; j < analogReadPinsLength; j++) {
+
+    int analogPinValue = analogRead(analogReadPins[j]);
+
+    sprintf(result + index, "%c", '-');
+
+    index += 1;
+ 
+    if (analogPinValue < 10) {
+
+      sprintf(result + index, "000%d", analogPinValue);
+
+      index += 4;
+
+    } else if (analogPinValue < 100) {
+
+      sprintf(result + index, "00%d", analogPinValue);
+
+      index += 4;
+
+    } else if (analogPinValue < 1000) {
+
+      sprintf(result + index, "0%d", analogPinValue);
+
+      index += 4;
+
+    } else {
+
+      sprintf(result + index, "%d", analogPinValue);
+
+      index += 4;
+
+    }
+  }
+  
+  result[index] = '\0';  // Null-terminate the string
 
 }
 

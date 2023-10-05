@@ -158,5 +158,7 @@ class Arduino:
 
         self.serial_communicate("?")
 
-        self.input_pin_states = self.receive_data()
+        input_pin_states = self.receive_data()
+
+        return(input_pin_states)
 
