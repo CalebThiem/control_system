@@ -162,3 +162,60 @@ class Arduino:
 
         return(input_pin_states)
 
+    # Tests functions above
+
+    
+    def test(self, reps, message_length, sleep_time):
+
+        upload_successes = 0
+        upload_failures = 0
+        download_successes = 0
+        download_failures = 0
+
+        start = default_timer()
+
+        # Send random data for testing
+
+        for i in range(reps):
+
+            # Generate random data
+
+            data = ''.join(random.choice('10') for _ in range(message_length))  
+
+            # Transmit data, receive response transmitted by Arduino
+
+            message = self.serial_communicate(data)
+
+            if message == "upload_failed":
+
+                upload_failures += 1
+
+            else:
+
+                upload_successes += 1
+
+            self.serial_communicate("?")
+
+            message = self.receive_data()
+
+            if message == "download_failed":
+
+                download_failures += 1
+
+            else:
+
+                download_successes += 1
+          
+                print(message)
+
+            time.sleep(sleep_time)
+
+
+        end = default_timer()
+
+        print('Upload successes:', upload_successes)
+        print('Upload failures:', upload_failures)
+        print('Download successes:', download_successes)
+        print('Download failures:', download_failures)
+        print('Time elapsed: %s seconds' % (end - start))
+
