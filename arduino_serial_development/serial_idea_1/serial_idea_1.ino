@@ -4,6 +4,18 @@ Written by Caleb Thiem.
 # Description #
 
 Communicates with an Arduino over serial, sending and receiving strings up to 300 characters in length. 
+Upon receiving a string of 1s and 0s, the script sets digital out pins on two MuxShield2 boards, with 
+1 representing HIGH, and 0 representing LOW, and the position of the character in the string representing
+the pin number. 
+
+Example:  
+
+111001
+
+Will set the first six pins on the first MuxShield2 board, with pins 1, 2, 3, and 6 being set HIGH, and pins 4 and 5 
+being set low.
+
+If requested, the states of digital input pins 30 through 53, and analog pins A6 through A15 are trasmitted.
 
 Advantages: easy to understand and modify
 
@@ -35,7 +47,9 @@ Upon receiving a properly formatted message, the Arduino will respond with one o
 If the first character after the checksum was a '?', the Arduino will then send
 a message of its own, with identical formatting.
 
-This message is composed of 24 "1" or "0" characters, with each consecutive character representing the state of a digital input pin, representing pins 30 through 53, inclusive. Following this string of 1s and 0s is a dash, followed by ten dash-seperated four digit numbers, each holding the value (0 to 1023) of an analog input pin, beginning with A6 and ending with A15. 
+This message is composed of 24 "1" or "0" characters, with each consecutive character representing the state of a digital input pin, 
+representing pins 30 through 53, inclusive. Following this string of 1s and 0s is a dash, followed by ten dash-seperated four digit numbers, 
+each holding the value (0 to 1023) of an analog input pin, beginning with A6 and ending with A15. 
 
 
 Input example:
@@ -89,7 +103,7 @@ This prevents flickering of the pin states when using more than one board.
 
 #include <FastCRC.h> // Library for CRC hash function
 
-#include <MuxShield.h> // Library for the Mux Shield 2
+#include <MuxShield.h> // Library for the MuxShield2
 
 FastCRC32 CRC32;
 
@@ -136,8 +150,6 @@ MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22
 #define END_MARKER '>'
 
 #define MAX_MESSAGE_LENGTH 301
-
-#define LED_BUILTIN 13  // Most Arduino boards have a built-in LED on pin 13
 
 #define MUX_BOARD_PIN_COUNT 48
 
@@ -226,8 +238,6 @@ void loop() {
 
     }
 
-    // Send confirmation message to sender
-
   }
   
 } 
@@ -235,7 +245,7 @@ void loop() {
 
 void setMuxShieldPins(char * receivedData) {
 
-    // Set MuxShield2 pins with memeory nonesene protection
+    // Set MuxShield2 pins
 
     unsigned int received_data_length = strlen(receivedData);
 
@@ -519,9 +529,7 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
     muxShield1.digitalWriteMS(1, relayNumber, state);
 
     return;
-
-   
-    
+ 
   }
 
   if (relayNumber <= 32) {
@@ -556,6 +564,7 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     muxShield2.digitalWriteMS(1, relayNumber - 45, state);
 
     return;
+
   }
 
   if (relayNumber <= 80) {
@@ -565,6 +574,7 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     muxShield2.digitalWriteMS(2, relayNumber - 60, state);
 
     return;
+
   }
 
   if (relayNumber <= 96) {
