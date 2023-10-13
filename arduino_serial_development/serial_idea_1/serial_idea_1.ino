@@ -101,6 +101,18 @@ This prevents flickering of the pin states when using more than one board.
 
 */
 
+// const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+
+//const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
+
+const int digitalReadPins[12] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+
+const int analogReadPins[6] = {A0, A1, A2, A3, A4, A5};
+
+#define digitalReadPinMode INPUT_PULLUP
+
+#define analogReadPinMode INPUT
+
 #include <FastCRC.h> // Library for CRC hash function
 
 #include <MuxShield.h> // Library for the MuxShield2
@@ -178,10 +190,6 @@ void mux_shield_1_control(unsigned int relayNumber, int state);
 
 void mux_shield_2_control(unsigned int relayNumber, int state);
 
-const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
-
-const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
-
 int digitalReadPinsLength = sizeof(digitalReadPins)/sizeof(digitalReadPins[0]);
 
 int analogReadPinsLength = sizeof(analogReadPins)/sizeof(analogReadPins[0]);
@@ -200,13 +208,13 @@ void setup() {
   
   for (int i = 0; i < digitalReadPinsLength; i++) {
 
-    pinMode(digitalReadPins[i], INPUT_PULLUP);
+    pinMode(digitalReadPins[i], digitalReadPinMode);
 
   }
 
   for (int i = 0; i < analogReadPinsLength; i++) {
 
-    pinMode(analogReadPins[i], INPUT);
+    pinMode(analogReadPins[i], analogReadPinMode);
 
   }
 
@@ -219,6 +227,8 @@ void loop() {
   readPins(digitalReadPins, digitalReadPinsLength, analogReadPins, analogReadPinsLength, message);
 
   if (serialReceive()) {
+
+    // Check if input pin states have been requested 
 
     if (receivedData[8] == '?') {
 

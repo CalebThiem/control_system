@@ -9,13 +9,49 @@ from timeit import default_timer
 
 class Arduino:
 
+'''
+
+Communicates with the Arduino over serial. See arduino.ino docstring for detailed information on the communication protocol.
+
+Attributes:
+
+    connection_ready : bool
+        
+        Set to True 2 seconds after connection is made (Arduino needs time to reset after serial connection is established)
+
+   input_pin_states : string
+
+        Stores the latest string sent from the Arduino, reflecting the state of the Arduino's input pins
+
+Methods:
+
+    connect(address, baud_rate)
+
+        Initiates the serial connection with the Arduino. Returs "connection_failed" if unsuccessful)
+
+    disconnect()
+
+        Ends the serial connection
+
+    serial_communicate(message)
+
+        Sends a string to the Arduino
+
+    refresh(message)
+
+        Sends a string to the Arduino, stores the Arduino's response in the input_pin_states variable, returns the Arduino's response
+
+    read_inputs()
+
+        Returns the Arduino's input pin state transmission
+
+    test(reps, transmission length (1 - 292), sleep time between reps (seconds), print Arduino response string (True/False)
+
+        Transmits a random string of 1s and 0s to the Arduino, receives response, and prints the time elapsed once the test has ended
+'''
+
+
     def __init__(self):
-
-        self.leach_pins = []
-
-        self.electrowinning_pins = []
-
-        self.spv_pins = []
 
         self.input_pin_states = ""
 
@@ -31,16 +67,16 @@ class Arduino:
 
         try:
 
-            self.serial_connection = serial.Serial(address, baud_rate)
+            self.serial_connection = serial.Serial(address, baud_rate, timeout = 1)
 
         except:
 
             return "connection_failed"
-            print("connection failed")
 
         else:
 
             threading.Timer(2, self.set_ready).start()
+
 
     def disconnect(self):
 
@@ -71,6 +107,7 @@ class Arduino:
 
     # Checks a zero-padded HEX CRC32 checksum in the first eight characters of a string beginning with "<" and ending with ">"
 
+
     def validate_checksum(self, received_data):
 
         # Isolate the first 8 bytes of the transmission (not including the start character "<")
@@ -91,11 +128,18 @@ class Arduino:
 
             return "checksum_validated"
 
+
     def receive_data(self):
         
-        serial_port = self.serial_connection
+        received_data = self.serial_connection.readline().decode().strip()
 
-        received_data = serial_port.readline().decode().strip()
+        if received_data:
+
+            pass
+
+        else:
+
+            return "no_data_received"
 
         # Check for message start and end characters
 
@@ -151,6 +195,10 @@ class Arduino:
         if received_data == "Validated":
 
             return "upload_success"
+    
+
+    # Transimts message and reads Arduino input pin states
+
 
     def refresh(self, pin_state_list):
 
@@ -161,16 +209,29 @@ class Arduino:
         input_pin_states = self.receive_data()
 
         return(input_pin_states)
-
-    # Tests functions above
-
     
-    def test(self, reps, message_length, sleep_time):
+
+    # Requests and reads Arduino input pin states    
+
+    def read_inputs(self):
+
+        self.serial_communicate("?")
+
+        return self.receive_data()
+
+
+    # Tests transmit and receive functionality
+    
+    def test(self, reps, message_length, sleep_time, print_output):
 
         upload_successes = 0
         upload_failures = 0
         download_successes = 0
         download_failures = 0
+
+        if print_output == False:
+
+            print("Test started...")
 
         start = default_timer()
 
@@ -206,7 +267,10 @@ class Arduino:
 
                 download_successes += 1
           
-                print(message)
+                if print_output == True:
+    
+                    print(message)
+
 
             time.sleep(sleep_time)
 
@@ -217,5 +281,5 @@ class Arduino:
         print('Upload failures:', upload_failures)
         print('Download successes:', download_successes)
         print('Download failures:', download_failures)
-        print('Time elapsed: %s seconds' % (end - start))
+        print('Time elapsed: %s seconds' % round((end - start), 3))
 
