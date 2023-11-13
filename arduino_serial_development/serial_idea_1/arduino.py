@@ -27,7 +27,7 @@ Methods:
 
     connect(address, baud_rate)
 
-        Initiates the serial connection with the Arduino. Returs "connection_failed" if unsuccessful)
+        Initiates the serial connection with the Arduino (Returns "connection_failed" if unsuccessful)
 
     disconnect()
 
