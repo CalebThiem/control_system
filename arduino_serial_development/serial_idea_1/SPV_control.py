@@ -117,7 +117,7 @@ class SPV_control:
 
     def inflation_cycle(self):
 
-        if self.inflation_cycle is True:
+        if self.inflation_cycle_running is True:
 
             self.set_bladder_state(self.high_pressure)
 
@@ -139,9 +139,12 @@ class SPV_control:
 
             time.sleep(self.vacuum_deflation)
 
-    def enable_inflation_cycle(self):
+    def start_inflation_cycle(self):
 
         self.inflation_cycle_running = True
+
+        inflation_cycle_thread = threading.Thread(target=self.inflation_cycle)
+        inflation_cylce_thread.start()
 
     def disable_inflation_cycle(self):
 
