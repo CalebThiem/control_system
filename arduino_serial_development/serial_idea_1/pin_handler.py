@@ -54,13 +54,13 @@ class PinHandler:
 
                self.pin_array[i - 1] = "1"  
 
-    def setPinsOn(self, relayNumbers):
+    def setRelaysOn(self, relayNumbers):
 
         for i in relayNumbers:
 
             self.pin_array[i - 1] = "1"
 
-    def setPinsOff(self, relayNumbers):
+    def setRelaysOff(self, relayNumbers):
 
         for i in relayNumbers:
 
