@@ -1,3 +1,5 @@
+import threading
+
 class PinHandler:
 
     def __init__(self):
@@ -5,6 +7,8 @@ class PinHandler:
         self.pin_array = []
 
         self.excluded_list = []
+
+        self.lock = threading.Lock()
 
         for _ in range(48 * 2):
 
