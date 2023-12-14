@@ -11,7 +11,7 @@ class SPV_control:
 
         # Rotation time in seconds
 
-        self.rotation_time = 120
+        self.rotation_time = 5
         self.pause_time = 2
 
         # Inflation times in seconds
@@ -19,21 +19,19 @@ class SPV_control:
         self.high_pressure_inflation = 10
         self.medium_pressure_inflation = 10
         self.low_pressure_inflation = 10
-        self.venting_deflation = 60
-        self.vacuum_deflation = 60
+        self.venting_deflation = 10
+        self.vacuum_deflation = 10
 
         # Set relay control system  numbers
 
-        self.motor_clockwise = 1
-        self.motor_anticlockwise = 2
+        self.motor_clockwise = [1]
+        self.motor_anticlockwise = [2]
 
-        self.high_pressure = 3
-        self.medium_pressure = 4
-        self.low_pressure = 5
-
-        self.vent = 6
-
-        self.vacuum_pump = 7
+        self.high_pressure = [3]
+        self.medium_pressure = [4]
+        self.low_pressure = [5]
+        self.vent = [6]
+        self.vacuum_pump = [7]
 
         # Tracking for number of rotations
 
@@ -56,7 +54,7 @@ class SPV_control:
 
         with self.arduino.lock:
 
-            self.arduino.serial_communicate(self.pin_handler.pin_array)
+            self.arduino.serial_communicate(self.pin_handler.pin_array_string())
 
         self.clockwise_rotations += 1
 
@@ -72,7 +70,7 @@ class SPV_control:
 
         with self.arduino.lock:
 
-            self.arduino.serial_communicate(self.pin_handler.pin_array)
+            self.arduino.serial_communicate(self.pin_handler.pin_array_string())
 
         self.anticlockwise_rotations += 1
 
@@ -87,6 +85,16 @@ class SPV_control:
             self.rotate_anticlockwise()
 
             time.sleep(self.rotation_time)
+
+        with self.pin_handler.lock:
+
+            self.pin_handler.setRelaysOff(self.motor_clockwise)
+
+            self.pin_handler.setRelaysOff(self.motor_anticlockwise)
+
+        with self.arduino.lock:
+
+            self.arduino.serial_communicate(self.pin_handler.pin_array_string())
 
     def start_rotation(self):
 
@@ -113,11 +121,13 @@ class SPV_control:
 
         with self.arduino.lock:
 
-            self.arduino.serial_communicate(self.pin_handler.pin_array)
+            if (self.arduino.serial_communicate(self.pin_handler.pin_array_string()) != "upload_success"):
+
+                print("Connection Error")
 
     def inflation_cycle(self):
 
-        if self.inflation_cycle_running is True:
+        while self.inflation_cycle_running is True:
 
             self.set_bladder_state(self.high_pressure)
 
@@ -144,7 +154,7 @@ class SPV_control:
         self.inflation_cycle_running = True
 
         inflation_cycle_thread = threading.Thread(target=self.inflation_cycle)
-        inflation_cylce_thread.start()
+        inflation_cycle_thread.start()
 
     def disable_inflation_cycle(self):
 

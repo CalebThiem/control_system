@@ -63,7 +63,7 @@ class Arduino:
 
         self.connection_ready = False
 
-        lock = threading.Lock()
+        self.lock = threading.Lock()
 
     def set_ready(self):
 
@@ -164,6 +164,10 @@ class Arduino:
     # and validates data sent from recipient
 
     def serial_communicate(self, data):
+
+        # Print data to be sent to Arduino, for debugging
+
+        print(data)
 
         serial_port = self.serial_connection
 

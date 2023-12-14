@@ -14,6 +14,10 @@ class PinHandler:
 
             self.pin_array.append("0")
 
+    def pin_array_string(self):
+
+        return "".join(self.pin_array)
+
     def excludePins(self, relayNumbers):
 
         for i in relayNumbers:
