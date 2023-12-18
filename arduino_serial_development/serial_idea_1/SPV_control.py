@@ -1,6 +1,51 @@
 import time
 import threading
 
+'''
+Basket control relay numbers and time parameters are defined here.
+
+Modifies pin_handler relay state record and updates Arduino with that record
+in order to contol the basket rotation and bladder inflation/deflation cycle.
+
+Methods:
+
+    start_rotation()
+
+        Starts basket clockwise/anticlockwise rotation cycle
+
+    stop_rotation()
+
+        Continues basket rotation until an even number of clockwise/anticlockwise
+        rotations is made, then stops rotation.
+
+    rotate_clockwise()
+
+        Rotates the basket clockwise
+
+    rotate_anticlockwise()
+
+        Rotates the basket anticlockwise
+
+    start_inflation_cycle()
+
+        Starts the inflation cylcle (defined in inflation_cycle())
+
+    disable_inflation_cycle()
+
+        Completes the current inflation run, then disables the cycle.
+
+    set_bladder_state(state_to_engage)
+
+        Engages a bladder inflation/deflation state. Available states:
+
+            high_pressure
+            medium_pressure
+            low_pressure
+            vent
+            vacuum_pump
+            none
+'''
+
 
 class SPV_control:
 
@@ -32,6 +77,7 @@ class SPV_control:
         self.low_pressure = [5]
         self.vent = [6]
         self.vacuum_pump = [7]
+        self.none = None
 
         # Tracking for number of rotations
 
@@ -117,13 +163,13 @@ class SPV_control:
             self.pin_handler.setRelaysOff(self.vent)
             self.pin_handler.setRelaysOff(self.vacuum_pump)
 
-            self.pin_handler.setRelaysOn(state_to_engage)
+            if (state_to_engage is not None):
+
+                self.pin_handler.setRelaysOn(state_to_engage)
 
         with self.arduino.lock:
 
-            if (self.arduino.serial_communicate(self.pin_handler.pin_array_string()) != "upload_success"):
-
-                print("Connection Error")
+            self.arduino.serial_communicate(self.pin_handler.pin_array_string())
 
     def inflation_cycle(self):
 
@@ -148,6 +194,8 @@ class SPV_control:
             self.set_bladder_state(self.vacuum_pump)
 
             time.sleep(self.vacuum_deflation)
+
+        self.set_bladder_state(None)
 
     def start_inflation_cycle(self):
 
