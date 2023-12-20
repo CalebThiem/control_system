@@ -47,7 +47,7 @@ Methods:
 '''
 
 
-class SPV_control:
+class SpvControl:
 
     def __init__(self, pin_handler_instance, arduino_instance):
 

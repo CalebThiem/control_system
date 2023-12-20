@@ -27,4 +27,3 @@ while True:
     print(arduino.receive_data())
 
     time.sleep(0.1)
-

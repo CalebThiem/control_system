@@ -1,5 +1,6 @@
 import binascii
 
+
 def add_checksum(data):
 
     # Calculate the CRC32 checksum and format it as a zero-padded 8-digit hexadecimal string
@@ -12,7 +13,9 @@ def add_checksum(data):
 
     return checksum + data
 
+
 while True:
+
     data = input()
 
     print("<%s>" % add_checksum(data))

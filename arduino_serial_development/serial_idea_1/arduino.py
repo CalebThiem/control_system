@@ -75,7 +75,7 @@ class Arduino:
 
             self.serial_connection = serial.Serial(address, baud_rate, timeout=1)
 
-        except:
+        except serial.serialutil.SerialException:
 
             return "connection_failed"
 

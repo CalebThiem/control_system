@@ -1,5 +1,6 @@
 import threading
 
+
 class PinHandler:
 
     def __init__(self):
@@ -50,17 +51,17 @@ class PinHandler:
 
     def setElectrowinningRelays(self, relayNumbers):
 
-       for i in range(49, 97):
+        for i in range(49, 97):
 
-           if i not in self.excluded_list:
+            if i not in self.excluded_list:
 
-               self.pin_array[i - 1] = "0"
+                self.pin_array[i - 1] = "0"
 
-       for i in relayNumbers:
+        for i in relayNumbers:
 
-           if i not in self.excluded_list:
+            if i not in self.excluded_list:
 
-               self.pin_array[i - 1] = "1"  
+                self.pin_array[i - 1] = "1"
 
     def setRelaysOn(self, relayNumbers):
 
@@ -73,5 +74,3 @@ class PinHandler:
         for i in relayNumbers:
 
             self.pin_array[i - 1] = "0"
-
-
