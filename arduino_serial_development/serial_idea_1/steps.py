@@ -27,19 +27,51 @@ class Steps:
 
         self.current_thread = self.dummy
 
+        self.current_step_number = 0
+
+        self.number_of_steps = 2
+
+        self.load_next_step()
+    
     def dummy(self):
 
         print("dummy called")
 
-    def load_step_1(self):
+    def load_next_step(self):
 
-        print("load_step_1 called")
+        print("load_next_step called")
 
-        self.current_thread = self.step_1
+        if (self.current_step_number < self.number_of_steps):
+    
+            self.current_step_number += 1
+
+        method_to_call = f"step_{self.current_step_number}"
+
+        self.current_thread = getattr(self, method_to_call)
+
+        self.current_thread(mode="display_only")
+
+        self.gui.update_gui(self.text_variable_strings)
+
+    def load_previous_step(self):
+
+        print("load_next_step called")
+
+        if (self.current_step_number > 1):
+    
+            self.current_step_number -= 1
+
+        method_to_call = f"step_{self.current_step_number}"
+
+        self.current_thread = getattr(self, method_to_call)
+
+        self.current_thread(mode="display_only")
+
+        self.gui.update_gui(self.text_variable_strings)
 
     def call_current_thread(self):
 
-        self.current_thread()
+        self.current_thread(mode="run_logic")
 
         self.gui.update_gui(self.text_variable_strings)
 
@@ -57,7 +89,7 @@ class Steps:
 
             self.queued_thread.cancel()
 
-    def step_1(self):
+    def step_1(self, mode):
 
         print("Step 1 executed")    
 
@@ -71,11 +103,13 @@ class Steps:
 
         self.current_thread = self.step_1
 
-        self.queued_thread = threading.Timer(function=next_step_option_1, interval=step_duration)
+        if (mode == "run_logic"):
 
-        self.start_queued_thread()
+            self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
 
-    def step_2(self):
+            self.start_queued_thread()
+
+    def step_2(self, mode):
 
         print("Step 2 executed")
 
@@ -89,6 +123,8 @@ class Steps:
 
         self.current_thread = self.step_2
 
-        self.queued_thread = threading.Timer(function=next_step_option_1, interval=step_duration)
+        if (mode == "run_logic"):
 
-        self.start_queued_thread()
+            self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
+
+            self.start_queued_thread()

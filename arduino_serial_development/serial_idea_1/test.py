@@ -3,6 +3,13 @@ from tkinter import ttk
 from steps import Steps
 from gui import Gui
 
+def on_close():
+
+    steps.cancel()
+
+    root.destroy()
+
+
 root = tk.Tk()
 root.title("test GUI")
 root.geometry("1200x650")
@@ -30,8 +37,10 @@ gui = Gui(frame_left)
 
 steps = Steps(gui)
 
-bottom_button_0 = ttk.Button(frame_bottom, text="Next", command=steps.load_step_1)
-bottom_button_1 = ttk.Button(frame_bottom, text="Previous")
+
+
+bottom_button_0 = ttk.Button(frame_bottom, text="Next", command=steps.load_next_step)
+bottom_button_1 = ttk.Button(frame_bottom, text="Previous", command=steps.load_previous_step)
 bottom_button_2 = ttk.Button(frame_bottom, text="Start", command=steps.call_current_thread)
 bottom_button_3 = ttk.Button(frame_bottom, text="Stop", command=steps.cancel)
 bottom_button_4 = ttk.Button(frame_bottom, text="Pause")
@@ -42,5 +51,7 @@ bottom_button_1.pack(side=tk.LEFT, padx=20, pady=20)
 bottom_button_2.pack(side=tk.LEFT, padx=20, pady=20)
 bottom_button_3.pack(side=tk.LEFT, padx=20, pady=20)
 bottom_button_4.pack(side=tk.LEFT, padx=20, pady=20)
+
+root.protocol("WM_DELETE_WINDOW", on_close)
 
 root.mainloop()
