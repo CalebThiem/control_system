@@ -3,7 +3,7 @@ import threading
 # from arduino import Arduino
 # from SPV_control import SpvControl
 # from pin_handler import PinHandler
-from gui import Gui
+# from gui import Gui
 
 class Steps:
 
@@ -29,15 +29,25 @@ class Steps:
 
         self.current_step_number = 0
 
+        self.step_running = False
+
         self.number_of_steps = 2
 
         self.load_next_step()
+
+        self.start_button_pressed = False
+
+        self.stop_button_pressed = False
     
     def dummy(self):
 
         print("dummy called")
 
     def load_next_step(self):
+
+        if (self.step_running):
+
+            return
 
         print("load_next_step called")
 
@@ -54,6 +64,10 @@ class Steps:
         self.gui.update_gui(self.text_variable_strings)
 
     def load_previous_step(self):
+
+        if (self.step_running):
+
+            return
 
         print("load_next_step called")
 
@@ -85,6 +99,8 @@ class Steps:
 
         print("cancel called")
 
+        self.step_running = False
+
         if (self.queued_thread is not None):
 
             self.queued_thread.cancel()
@@ -105,6 +121,8 @@ class Steps:
 
         if (mode == "run_logic"):
 
+            self.step_running = True
+
             self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
 
             self.start_queued_thread()
@@ -124,6 +142,8 @@ class Steps:
         self.current_thread = self.step_2
 
         if (mode == "run_logic"):
+
+            self.step_running = True
 
             self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
 

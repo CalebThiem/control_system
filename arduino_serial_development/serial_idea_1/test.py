@@ -9,6 +9,45 @@ def on_close():
 
     root.destroy()
 
+def previous_button_press():
+
+    steps.load_previous_step()
+
+def next_button_press():
+
+    steps.load_next_step()
+
+def start_button_press():
+
+    # Grey out buttons
+
+    next_button.config(state=tk.DISABLED)
+
+    previous_button.config(state=tk.DISABLED)
+
+    start_button.config(state=tk.DISABLED)
+
+    steps.call_current_thread()
+
+    steps.start_button_pressed = True
+    
+    steps.stop_button_pressed = False
+
+def stop_button_press():
+
+    steps.cancel()
+
+    steps.start_button_pressed = False
+
+    steps.stop_button_pressed = True
+
+    next_button.config(state=tk.NORMAL)
+
+    previous_button.config(state=tk.NORMAL)
+
+    start_button.config(state=tk.NORMAL)
+
+   
 
 root = tk.Tk()
 root.title("test GUI")
@@ -33,18 +72,21 @@ frame_left.grid_propagate(False)
 frame_right.grid_propagate(False)
 frame_bottom.grid_propagate(False)
 
+
 gui = Gui(frame_left)
 
 steps = Steps(gui)
 
-
-
-bottom_button_0 = ttk.Button(frame_bottom, text="Next", command=steps.load_next_step)
-bottom_button_1 = ttk.Button(frame_bottom, text="Previous", command=steps.load_previous_step)
-bottom_button_2 = ttk.Button(frame_bottom, text="Start", command=steps.call_current_thread)
-bottom_button_3 = ttk.Button(frame_bottom, text="Stop", command=steps.cancel)
+bottom_button_0 = ttk.Button(frame_bottom, text="Previous", command=previous_button_press)
+bottom_button_1 = ttk.Button(frame_bottom, text="Next", command=next_button_press)
+bottom_button_2 = ttk.Button(frame_bottom, text="Start", command=start_button_press)
+bottom_button_3 = ttk.Button(frame_bottom, text="Stop", command=stop_button_press)
 bottom_button_4 = ttk.Button(frame_bottom, text="Pause")
 
+previous_button = bottom_button_0
+next_button = bottom_button_1
+start_button = bottom_button_2
+stop_button = bottom_button_3
 
 bottom_button_0.pack(side=tk.LEFT, padx=20, pady=20)
 bottom_button_1.pack(side=tk.LEFT, padx=20, pady=20)
