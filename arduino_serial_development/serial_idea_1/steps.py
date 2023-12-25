@@ -8,13 +8,13 @@ import threading
 class Steps:
 
     def __init__(self, gui):
-        '''
-        self.pin_handler = pin_handler_instance
+        
+        # self.pin_handler = pin_handler_instance
 
-        self.arduino = arduino_instance
+        # self.arduino = arduino_instance
 
-        self.spv_control = spv_control_instance
-        '''
+        # self.spv_control = spv_control_instance
+        
         self.gui = gui
 
         self.text_variable_strings = []
@@ -56,13 +56,13 @@ class Steps:
     def step_0(self, mode):
 
         text_as_list = [
-        "Initial Actions",
-        "1. Check that LT1L3=1, LT2L3=1, Temp control active",
-        "2. Take filter basket loaded with 10kg EFD in horizontal position and using lift place over PV",
-        "3. Connect bladder air line",
-        "4. Check that basket is oriented so magnet will lock",
-        "5. Lower basket into PV until seated and magnet halves lock",
-        "When done, click Next."
+            "Initial Actions",
+            "1. Check that LT1L3=1, LT2L3=1, Temp control active",
+            "2. Take filter basket loaded with 10kg EFD in horizontal position and using lift place over PV",
+            "3. Connect bladder air line",
+            "4. Check that basket is oriented so magnet will lock",
+            "5. Lower basket into PV until seated and magnet halves lock",
+            "When done, click Next."
         ]
  
         self.write_gui_text(text_as_list)
@@ -75,9 +75,18 @@ class Steps:
 
         step_duration = 2
 
-        for i in range(self.gui.number_of_labels):
+        text_as_list = [
+            "Step 1",
+            "Prog No. 1",
+            "Name: Fill PV with Used Water",
+            "Action: Fill PV to Level 2 with used water. Start FB rotation and BB.",
+            "Outputs: 6, 11, 16, BB, BO",
+            "Inputs: PVL2",
+            "Step End: PVL2=1"
 
-            self.text_variable_strings[i] = "Step 1"
+        ]
+
+        self.write_gui_text(text_as_list)
 
         next_step_option_1 = self.step_2
 

@@ -2,8 +2,26 @@ import tkinter as tk
 from tkinter import ttk
 from steps import Steps
 from gui import Gui
+from arduino import Arduino
+import time
+
+shutdown = False
+
+arduino_address = '/dev/ttyACM1'
+
+baud_rate = 9000
+
+refresh_arduino_input_data_sheduled = None
 
 def on_close():
+
+    global arduino
+    global shutdown 
+    global root
+
+    arduino.disconnect()
+
+    root.after_cancel(refresh_arduino_input_data_sheduled)
 
     steps.cancel()
 
@@ -47,11 +65,47 @@ def stop_button_press():
 
     start_button.config(state=tk.NORMAL)
 
-   
+arduino_input_data = []
 
+def refresh_arduino_input_data():
+    
+    global root
+    global arduino
+    global arduino_input_data
+    global input_data_display
+    global shutdown
+    global refresh_arduino_input_data_sheduled
+
+    if (arduino.connection_ready):
+
+        arduino_input_data = arduino.read_inputs()
+
+    else:
+
+        arduino_input_data = ['no_connection']
+
+    input_data_display.update_gui(arduino_input_data)
+
+    refresh_arduino_input_data_sheduled = root.after(200, refresh_arduino_input_data)
+
+def count_input_data_elements():
+
+    global arduino
+
+    global arduino_input_data
+
+    if (arduino.connection_ready):
+
+        arduino_input_data = arduino.read_inputs()
+
+    element_count = len(arduino_input_data)
+
+    return element_count
+
+    
 root = tk.Tk()
 root.title("test GUI")
-root.geometry("1220x650")
+root.geometry("1500x1000")
 root.resizable(False, False)
 
 frame_left = tk.Frame(root, width=900, height=600)
@@ -59,7 +113,7 @@ frame_right = tk.Frame(root, width=300, height=600)
 frame_bottom = tk.Frame(root, width=1200, height=50)
 
 frame_left.grid(row=0, column=0, sticky="nw", padx="10")
-frame_right.grid(row=0, column= 1, sticky="nw", padx="10")
+frame_right.grid(row=0, column= 1, sticky="ne", padx="10")
 frame_bottom.grid(row=1, column=0, columnspan=2)
 
 # Configure grid weights
@@ -72,10 +126,17 @@ frame_left.grid_propagate(False)
 frame_right.grid_propagate(False)
 frame_bottom.grid_propagate(False)
 
+steps_display = Gui(frame_left, number_of_labels=14, pady=10)
 
-gui = Gui(frame_left)
+arduino = Arduino()
 
-steps = Steps(gui)
+arduino.connect(arduino_address, baud_rate)
+
+time.sleep(2)
+
+input_data_display = Gui(frame_right, number_of_labels=count_input_data_elements(), pady=0)
+
+steps = Steps(steps_display)
 
 bottom_button_0 = ttk.Button(frame_bottom, text="Previous", command=previous_button_press)
 bottom_button_1 = ttk.Button(frame_bottom, text="Next", command=next_button_press)
@@ -95,5 +156,9 @@ bottom_button_3.pack(side=tk.LEFT, padx=20, pady=20)
 bottom_button_4.pack(side=tk.LEFT, padx=20, pady=20)
 
 root.protocol("WM_DELETE_WINDOW", on_close)
+
+# Start refresh_arduino_input_data loop (the schedules itself to be called with root.after)
+
+refresh_arduino_input_data()
 
 root.mainloop()

@@ -167,7 +167,7 @@ class Arduino:
 
         # Print data to be sent to Arduino, for debugging
 
-        print(data)
+        # print(data)
 
         serial_port = self.serial_connection
 
@@ -225,8 +225,20 @@ class Arduino:
 
         self.serial_communicate("?")
 
-        return self.receive_data()
+        # Split the string by hyphens
+        
+        parts = self.receive_data().split('-')
 
+        # Process the first part (series of '1's) into individual digits
+    
+        first_part_digits = list(parts[0])
+
+        # Combine the individual digits with the remaining parts
+    
+        processed_list = first_part_digits + parts[1:]
+
+        return processed_list
+        
     # Tests transmit and receive functionality
 
     def test(self, reps, message_length, sleep_time, print_output):

@@ -4,13 +4,13 @@ from tkinter import font as tkFont
 
 class Gui:
 
-    def __init__(self, frame):
+    def __init__(self, frame, number_of_labels, pady):
         
         self.bold_font = tkFont.Font(family="Helvetica", size=12, weight="bold")
         
         self.text_label_variables = []
 
-        self.number_of_labels = 14
+        self.number_of_labels = number_of_labels
 
         for i in range(self.number_of_labels):
 
@@ -30,15 +30,13 @@ class Gui:
 
             text_label = tk.Label(frame, textvariable=self.text_label_variables[i])
 
-            text_label.pack(anchor='nw', pady=10)
+            text_label.pack(anchor='nw', pady=pady)
 
             self.text_labels.append(text_label)
 
 
     def update_gui(self, list_of_strings):
 
-        print("gui.update_gui called")
-    
         for index in range(len(list_of_strings)):
 
             self.text_label_variables[index].set(list_of_strings[index])
