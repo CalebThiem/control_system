@@ -1,11 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
-
+from tkinter import font as tkFont
 
 class Gui:
 
     def __init__(self, frame):
-
+        
+        self.bold_font = tkFont.Font(family="Helvetica", size=12, weight="bold")
+        
         self.text_label_variables = []
 
         self.number_of_labels = 14
@@ -18,7 +20,13 @@ class Gui:
 
         self.text_labels = []
 
-        for i in range(len(self.text_label_variables)):
+        text_label = tk.Label(frame, textvariable=self.text_label_variables[0], font=self.bold_font)
+
+        text_label.pack(anchor='nw', pady=10)
+
+        self.text_labels.append(text_label)
+
+        for i in range(1, len(self.text_label_variables)):
 
             text_label = tk.Label(frame, textvariable=self.text_label_variables[i])
 

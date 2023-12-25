@@ -51,11 +51,11 @@ def stop_button_press():
 
 root = tk.Tk()
 root.title("test GUI")
-root.geometry("1200x650")
+root.geometry("1220x650")
 root.resizable(False, False)
 
-frame_left = tk.Frame(root, width=600, height=600)
-frame_right = tk.Frame(root, width=600, height=600)
+frame_left = tk.Frame(root, width=900, height=600)
+frame_right = tk.Frame(root, width=300, height=600)
 frame_bottom = tk.Frame(root, width=1200, height=50)
 
 frame_left.grid(row=0, column=0, sticky="nw", padx="10")

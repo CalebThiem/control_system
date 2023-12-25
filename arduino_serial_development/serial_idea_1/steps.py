@@ -27,7 +27,7 @@ class Steps:
 
         self.current_thread = self.dummy
 
-        self.current_step_number = 0
+        self.current_step_number = -1
 
         self.step_running = False
 
@@ -38,72 +38,36 @@ class Steps:
         self.start_button_pressed = False
 
         self.stop_button_pressed = False
-    
-    def dummy(self):
 
-        print("dummy called")
+    def write_gui_text(self, text_as_list):
 
-    def load_next_step(self):
+        provided_text_elements = len(text_as_list)
 
-        if (self.step_running):
+        for i in range(provided_text_elements):
 
-            return
+            self.text_variable_strings[i] = text_as_list[i]
 
-        print("load_next_step called")
+        for i in range(provided_text_elements, len(self.text_variable_strings)):
 
-        if (self.current_step_number < self.number_of_steps):
-    
-            self.current_step_number += 1
-
-        method_to_call = f"step_{self.current_step_number}"
-
-        self.current_thread = getattr(self, method_to_call)
-
-        self.current_thread(mode="display_only")
-
+            self.text_variable_strings[i] = ''
+        
         self.gui.update_gui(self.text_variable_strings)
+        
+    def step_0(self, mode):
 
-    def load_previous_step(self):
+        text_as_list = [
+        "Initial Actions",
+        "1. Check that LT1L3=1, LT2L3=1, Temp control active",
+        "2. Take filter basket loaded with 10kg EFD in horizontal position and using lift place over PV",
+        "3. Connect bladder air line",
+        "4. Check that basket is oriented so magnet will lock",
+        "5. Lower basket into PV until seated and magnet halves lock",
+        "When done, click Next."
+        ]
+ 
+        self.write_gui_text(text_as_list)
 
-        if (self.step_running):
-
-            return
-
-        print("load_next_step called")
-
-        if (self.current_step_number > 1):
-    
-            self.current_step_number -= 1
-
-        method_to_call = f"step_{self.current_step_number}"
-
-        self.current_thread = getattr(self, method_to_call)
-
-        self.current_thread(mode="display_only")
-
-        self.gui.update_gui(self.text_variable_strings)
-
-    def call_current_thread(self):
-
-        self.current_thread(mode="run_logic")
-
-        self.gui.update_gui(self.text_variable_strings)
-
-    def start_queued_thread(self):
-
-        self.queued_thread.start()
-
-        self.gui.update_gui(self.text_variable_strings)
-
-    def cancel(self):
-
-        print("cancel called")
-
-        self.step_running = False
-
-        if (self.queued_thread is not None):
-
-            self.queued_thread.cancel()
+        self.current_thread = self.step_0
 
     def step_1(self, mode):
 
@@ -148,3 +112,69 @@ class Steps:
             self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
 
             self.start_queued_thread()
+
+    def dummy(self):
+
+        print("dummy called")
+
+    def load_next_step(self):
+
+        if (self.step_running):
+
+            return
+
+        print("load_next_step called")
+
+        if (self.current_step_number < self.number_of_steps):
+    
+            self.current_step_number += 1
+
+        method_to_call = f"step_{self.current_step_number}"
+
+        self.current_thread = getattr(self, method_to_call)
+
+        self.current_thread(mode="display_only")
+
+        self.gui.update_gui(self.text_variable_strings)
+
+    def load_previous_step(self):
+
+        if (self.step_running):
+
+            return
+
+        print("load_next_step called")
+
+        if (self.current_step_number > 0):
+    
+            self.current_step_number -= 1
+
+        method_to_call = f"step_{self.current_step_number}"
+
+        self.current_thread = getattr(self, method_to_call)
+
+        self.current_thread(mode="display_only")
+
+        self.gui.update_gui(self.text_variable_strings)
+
+    def call_current_thread(self):
+
+        self.current_thread(mode="run_logic")
+
+        self.gui.update_gui(self.text_variable_strings)
+
+    def start_queued_thread(self):
+
+        self.queued_thread.start()
+
+        self.gui.update_gui(self.text_variable_strings)
+
+    def cancel(self):
+
+        print("cancel called")
+
+        self.step_running = False
+
+        if (self.queued_thread is not None):
+
+            self.queued_thread.cancel()
