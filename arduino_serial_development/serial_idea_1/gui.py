@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import font as tkFont
 
-class Gui:
+class StepsDisplay:
 
     def __init__(self, frame, number_of_labels, pady):
         
@@ -35,7 +35,7 @@ class Gui:
             self.text_labels.append(text_label)
 
 
-    def update_gui(self, list_of_strings):
+    def update_steps_display(self, list_of_strings):
 
         for index in range(len(list_of_strings)):
 

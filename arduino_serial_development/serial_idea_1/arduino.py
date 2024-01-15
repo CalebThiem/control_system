@@ -57,9 +57,12 @@ Methods:
 
 
 class Arduino:
+
     def __init__(self):
 
         self.input_pin_states = ""
+
+        self.input_pin_states_list = list
 
         self.connection_ready = False
 
@@ -235,9 +238,9 @@ class Arduino:
 
         # Combine the individual digits with the remaining parts
     
-        processed_list = first_part_digits + parts[1:]
+        self.input_pin_states_list = first_part_digits + parts[1:]
 
-        return processed_list
+        return self.input_pin_states_list
         
     # Tests transmit and receive functionality
 

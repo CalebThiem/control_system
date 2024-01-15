@@ -1,9 +1,7 @@
 import threading
-import time
 from arduino import Arduino
 from SPV_control import SpvControl
 from pin_handler import PinHandler
-import tkinter as tk
 
 class Steps:
 
@@ -39,8 +37,6 @@ class Steps:
 
         self.stop_button_pressed = False
 
-        self.alarm_on = tk.BooleanVar()
-
     def write_steps_display_text(self, text_as_list):
 
         provided_text_elements = len(text_as_list)
@@ -75,9 +71,7 @@ class Steps:
 
         print("Step 1 executed")    
 
-        self.current_thread = self.step_1
-
-        self.current_step_number = 1
+        step_duration = 2
 
         text_as_list = [
             "Step 1",
@@ -93,9 +87,17 @@ class Steps:
 
         self.write_steps_display_text(text_as_list)
 
+        next_step_option_1 = self.step_2
+
+        self.current_thread = self.step_1
+
         if (mode == "run_logic"):
 
             self.step_running = True
+
+            # self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
+
+            # self.start_queued_thread()
 
             start_time = time.time()
 
@@ -103,82 +105,25 @@ class Steps:
 
                 # Check alarm conditions
 
-                if (time.time() - start_time >= 5) and (self.check_sensor('PVL2') == 0):
+                if (time.time() - start_time >= 7 * 60) and (check_sensor('PVL2') == 0):
+
                     self.cancel() # Cancel sheduled step progression
                     
                     self.raise_alarm()
-
-                    print(time.time() - start_time)
 
                     break
 
                 # Check step progression conditions
 
-                if self.check_sensor('PVL2') == 1:
-                    
-                    self.step_running = False
+                if check_sensor('PVL2') == 1:
 
                     self.load_next_step()
 
                     self.call_current_thread()
 
-                    break
-
                 time.sleep(0.2)
-    
-    def step_2(self, mode):
-        
-        print("step 2 executed")
-
-        self.current_thread = self.step_2
-
-        self.current_step_number = 2
-
-        text_as_list = [
-                "Step 2",
-                "Name: Circulate and Neutralize PV Water",
-                "Action: PV water circulation and H2SO4 slowly added. pH monitored.",
-                "Outputs: 3, 9, 11, 14, 16, 19, BB, BO",
-                "Inputs: timer",
-                "Alarm condition: PVFM<10L/min",
-                "Alarm action: stop step, find problem",
-                "Step end: t=5min",
-                "Step end action: advance to next step"
-                ]
-
-        self.write_steps_display_text(text_as_list)
 
 
-        if (mode == "run_logic"):
-            
-            self.step_running = True
-
-            start_time = time.time()
-
-            while self.step_running:
-
-                # Check alarm conditions
-
-                if self.check_sensor('PVFM') < 10:
-
-                    self.cancel()
-
-                    self.raise_alarm()
-
-                    break
-
-                if time.time() - start_time >= 5:
-
-                    self.cancel()
-
-                    self.load_step('step_1', 'run_logic')
-
-                    self.call_current_thread()
-
-                    break
-
-                time.sleep(0.2)
-    '''        
     def step_2(self, mode):
 
         print("Step 2 executed")
@@ -200,7 +145,6 @@ class Steps:
             self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
 
             self.start_queued_thread()
-    '''
 
     def dummy(self):
 
@@ -248,15 +192,15 @@ class Steps:
 
     def call_current_thread(self):
 
-        mode = "run_logic"
-
-        threading.Thread(target=self.current_thread, args=(mode,)).start()
+        self.current_thread(mode="run_logic")
 
         self.steps_display.update_steps_display(self.text_variable_strings)
 
     def load_step(self, step, mode):
 
         self.current_thread = getattr(self, step)
+
+        self.current_thread(mode=mode)
 
     def start_queued_thread(self):
 
@@ -278,20 +222,4 @@ class Steps:
 
         print("alarm raised")
 
-        self.alarm_on.set(True)
-
-    def check_sensor(self, sensor_name):
-
-        if sensor_name == "PVL2":
-
-            return 0
-        
-        if sensor_name == "PVFM":
-
-            return 20
-
-        dummy_value = input(f"Provide state for {sensor_name}: ")
-
-        if dummy_value:
-
-            return int(dummy_value)
+    def check_sensor
