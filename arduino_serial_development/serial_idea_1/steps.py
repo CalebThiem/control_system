@@ -4,57 +4,10 @@ from arduino import Arduino
 from SPV_control import SpvControl
 from pin_handler import PinHandler
 import tkinter as tk
+from dummy_sensor_input import DummySensorInput
 
 class Steps:
 
-    def __init__(self, steps_display):
-        
-        self.pin_handler = PinHandler()
-
-        self.arduino = Arduino()
-
-        self.spv_control = SpvControl(self.pin_handler, self.arduino)
-        
-        self.steps_display = steps_display
-
-        self.text_variable_strings = []
-
-        for i in range(steps_display.number_of_labels):
-
-            self.text_variable_strings.append('')
-        
-        self.queued_thread = None
-
-        self.current_thread = self.dummy
-
-        self.current_step_number = -1
-
-        self.step_running = False
-
-        self.number_of_steps = 2
-
-        self.load_next_step()
-
-        self.start_button_pressed = False
-
-        self.stop_button_pressed = False
-
-        self.alarm_on = tk.BooleanVar()
-
-    def write_steps_display_text(self, text_as_list):
-
-        provided_text_elements = len(text_as_list)
-
-        for i in range(provided_text_elements):
-
-            self.text_variable_strings[i] = text_as_list[i]
-
-        for i in range(provided_text_elements, len(self.text_variable_strings)):
-
-            self.text_variable_strings[i] = ''
-        
-        self.steps_display.update_steps_display(self.text_variable_strings)
-        
     def step_0(self, mode):
 
         text_as_list = [
@@ -104,6 +57,7 @@ class Steps:
                 # Check alarm conditions
 
                 if (time.time() - start_time >= 5) and (self.check_sensor('PVL2') == 0):
+
                     self.cancel() # Cancel sheduled step progression
                     
                     self.raise_alarm()
@@ -148,7 +102,6 @@ class Steps:
 
         self.write_steps_display_text(text_as_list)
 
-
         if (mode == "run_logic"):
             
             self.step_running = True
@@ -178,30 +131,47 @@ class Steps:
                     break
 
                 time.sleep(0.2)
-    '''        
-    def step_2(self, mode):
 
-        print("Step 2 executed")
+    def __init__(self, steps_display):
+        
+        # --- Test code --- 
 
-        step_duration = 2
+        self.dummy_sensor_input = DummySensorInput()
 
-        for i in range(self.steps_display.number_of_labels):
+        # --- End ---
 
-            self.text_variable_strings[i] = "Step 2"
+        self.pin_handler = PinHandler()
 
-        next_step_option_1 = self.step_1
+        self.arduino = Arduino()
 
-        self.current_thread = self.step_2
+        self.spv_control = SpvControl(self.pin_handler, self.arduino)
+        
+        self.steps_display = steps_display
 
-        if (mode == "run_logic"):
+        self.text_variable_strings = []
 
-            self.step_running = True
+        for i in range(steps_display.number_of_labels):
 
-            self.queued_thread = threading.Timer(interval=step_duration, function=next_step_option_1, args=("run_logic",))
+            self.text_variable_strings.append('')
+        
+        self.queued_thread = None
 
-            self.start_queued_thread()
-    '''
+        self.current_thread = self.dummy
 
+        self.current_step_number = -1
+
+        self.step_running = False
+
+        self.number_of_steps = 2
+
+        self.load_next_step()
+
+        self.start_button_pressed = False
+
+        self.stop_button_pressed = False
+
+        self.alarm_on = tk.BooleanVar()
+ 
     def dummy(self):
 
         print("dummy called")
@@ -282,16 +252,20 @@ class Steps:
 
     def check_sensor(self, sensor_name):
 
-        if sensor_name == "PVL2":
+        return self.dummy_sensor_input.get_dummy_state(sensor_name)
 
-            return 0
+    def write_steps_display_text(self, text_as_list):
+
+        provided_text_elements = len(text_as_list)
+
+        for i in range(provided_text_elements):
+
+            self.text_variable_strings[i] = text_as_list[i]
+
+        for i in range(provided_text_elements, len(self.text_variable_strings)):
+
+            self.text_variable_strings[i] = ''
         
-        if sensor_name == "PVFM":
+        self.steps_display.update_steps_display(self.text_variable_strings)
+        
 
-            return 20
-
-        dummy_value = input(f"Provide state for {sensor_name}: ")
-
-        if dummy_value:
-
-            return int(dummy_value)
