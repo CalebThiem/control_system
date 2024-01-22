@@ -265,6 +265,8 @@ class Arduino:
 
             data = ''.join(random.choice('10') for _ in range(message_length))
 
+            print(data)
+
             # Transmit data, receive response transmitted by Arduino
 
             message = self.serial_communicate(data)

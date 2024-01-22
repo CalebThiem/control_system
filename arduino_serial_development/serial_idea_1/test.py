@@ -1,6 +1,8 @@
 import tkinter as tk
 from testClass import SensorDisplay  # Assuming your class is in sensor_display.py
 from testClass import SensorDisplayNoBlit
+from testClass import SensorDisplayOld
+from testClass import SensorDisplayNew
 import threading
 
 class SensorApp:
@@ -17,7 +19,7 @@ class SensorApp:
 
     def open_sensor_display(self):
         # Create an instance of SensorDisplay
-        self.sensor_display = SensorDisplayNoBlit(self.root, self.arduino)
+        self.sensor_display = SensorDisplayNew(self.root, self.arduino)
 
         # Open the sensor display popup
         self.sensor_display.show_popup()

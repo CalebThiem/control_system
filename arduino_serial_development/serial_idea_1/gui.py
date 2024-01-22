@@ -5,6 +5,9 @@ from tkinter import font as tkFont
 import tkinter as tk
 from tkinter import ttk
 
+from testClass import SensorDisplayNew
+from testClass import SensorDisplayFast
+
 # Buttons
 class ControlPanel: 
     def __init__(self, parent, steps, sensor_display):
@@ -154,7 +157,8 @@ class ApplicationWindow:
         # Initialize the StepsDisplay
         self.steps_display = steps_display
 
-        self.sensor_display = SensorDisplay(self.root, arduino)
+        #self.sensor_display = SensorDisplayNew(self.root, arduino)
+        self.sensor_display = SensorDisplayFast(self.root, arduino)
 
         # Initialize the ControlPanel
         self.control_panel = ControlPanel(self.layout['frame_bottom'], steps, self.sensor_display)
