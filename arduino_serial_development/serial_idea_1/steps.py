@@ -132,7 +132,7 @@ class Steps:
 
                 time.sleep(0.2)
 
-    def __init__(self, steps_display):
+    def __init__(self, steps_display, arduino):
         
         # --- Test code --- 
 
@@ -140,9 +140,9 @@ class Steps:
 
         # --- End ---
 
-        self.pin_handler = PinHandler()
+        self.arduino = arduino
 
-        self.arduino = Arduino()
+        self.pin_handler = PinHandler()
 
         self.spv_control = SpvControl(self.pin_handler, self.arduino)
         

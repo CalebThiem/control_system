@@ -212,7 +212,9 @@ class SensorDisplay:
         self.data_labels = {}
         self.graphs = {}
         self.data_points = {}  # Dynamically populated based on analog inputs
-
+        '''
+        self.inputs_to_graph = ('A6', 'A7', 'A8')
+        '''
     def read_arduino(self):
         if self.arduino.connection_ready:
             with self.arduino.lock:
@@ -220,7 +222,7 @@ class SensorDisplay:
 
         data = dict()
         digital_input_counter = 30
-        analog_input_counter = 0
+        analog_input_counter = 6
 
         for i in self.arduino_input_data:
             if len(i) == 1:
@@ -270,43 +272,28 @@ class SensorDisplay:
             label.pack(anchor='nw', pady=2, padx=5)
             self.data_labels[key] = var
 
+            print(key)
+            
             if key.startswith("A"):  # For analog inputs, create graphs
                 self.data_points[key] = []  # Initialize data points list
-                fig, ax = plt.subplots(figsize=(10, 5), dpi=100)
-                line, = ax.plot([], [], 'r-')
-                ax.set_xlim(0, 100)  # Assuming you want to plot last 50 points
-                ax.set_ylim(0, 1023)  # Assuming value ranges from 0-1023
-
+                fig = Figure(figsize=(10, 4), dpi=100)
+                fig.add_subplot(111).plot([], [])
                 canvas = FigureCanvasTkAgg(fig, master=self.scrollable_frame)
                 canvas_widget = canvas.get_tk_widget()
                 canvas_widget.pack(anchor='nw', pady=2, padx=5)
-
-                # Draw the canvas to initialize everything
-                canvas.draw()
-                # Now capture the background
-                self.graphs[key] = {'fig': fig, 'ax': ax, 'line': line, 'canvas': canvas, 'bg': canvas.copy_from_bbox(ax.bbox)}
+                self.graphs[key] = (fig, canvas)
 
     def update_graph(self, key, value):
         if key in self.graphs:
+            fig, canvas = self.graphs[key]
+            ax = fig.get_axes()[0]
+            ax.clear()
             self.data_points[key].append(value)
-            # Keep only the last 50 data points
             if len(self.data_points[key]) > 100:
-                self.data_points[key].pop(0)
-                #self.data_points[key] = self.data_points[key][-50:]
-
-            graph = self.graphs[key]
-            line = graph['line']
-            canvas = graph['canvas']
-            ax = graph['ax']
-            bg = graph['bg']
-
-            # Update the line data
-            line.set_data(range(len(self.data_points[key])), self.data_points[key])
-
-            # Restore the background and draw the updated line
-            canvas.restore_region(bg)
-            ax.draw_artist(line)
-            canvas.blit(ax.bbox)
+                    self.data_points[key].pop(0)
+            ax.plot(self.data_points[key], 'r-')
+            ax.set_title(f"Graph for {key}")
+            canvas.draw()
 
     def start_displaying(self):
         self.update_data()
@@ -318,36 +305,12 @@ class SensorDisplay:
                 self.data_labels[key].set(f"{key}: {value}")
             self.update_graph(key, value)
 
-        self.update_id = self.root.after(200, self.update_data)
+        self.update_id = self.root.after(500, self.update_data)
 
     def stop_displaying(self):
         if self.update_id is not None:
             self.root.after_cancel(self.update_id)
-            print("Stopped loop")
 
     def on_window_close(self):
         self.stop_displaying()
-
-        # Reset or clear the background buffer if necessary
-        # (Depends on your specific implementation with blit)
-        for key in self.graphs:
-            graph = self.graphs[key]
-            canvas = graph['canvas']
-            ax = graph['ax']
-            fig = graph['fig']
-            
-            # Redraw the entire figure to reset the state (if needed)
-            ax.draw(fig.canvas.get_renderer())
-            canvas.draw()
-
-            # Destroy the canvas widget
-            canvas_widget = canvas.get_tk_widget()
-            canvas_widget.destroy()
-            
-            print("Erased graph")
-
-        # Destroy the popup window
         self.popup.destroy()
-
-        print("Called popup.destroy")
-
