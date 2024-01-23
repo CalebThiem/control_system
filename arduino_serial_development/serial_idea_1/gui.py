@@ -1,29 +1,26 @@
 import matplotlib
-matplotlib.use('TkAgg')
-print(matplotlib.get_backend())
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from tkinter import font as tkFont
 import tkinter as tk
 from tkinter import ttk
 from collections import deque
-from testClass import SensorDisplayNew
-from testClass import SensorDisplayFast
+
+matplotlib.use('TkAgg')
 
 # Buttons
 class ControlPanel: 
-    def __init__(self, parent, steps, sensor_display):
+    def __init__(self, parent, steps):
         self.parent = parent
         self.steps = steps
-        self.sensor_display = sensor_display
+        #self.sensor_display = sensor_display
 
         self.start_button = tk.Button(parent, text="Start", command=self.start_button_press)
         self.stop_button = tk.Button(parent, text="Stop", command=self.stop_button_press, state=tk.DISABLED)
         self.next_button = tk.Button(parent, text="Next", command=self.next_button_press)
         self.previous_button = tk.Button(parent, text="Previous", command=self.previous_button_press)
         
-        self.sensor_display_popup_button = tk.Button(parent, text="Raw Input Data", command=self.sensor_display.show_popup)
+        self.sensor_display_popup_button = tk.Button(parent, text="Raw Input Data") # command=self.sensor_display.show_popup
 
         # Layout the buttons
         self.start_button.pack(side=tk.LEFT, padx=20, pady=20)
@@ -73,7 +70,8 @@ class ArduinoInterface:
         # Show connection popup
 
         self.popup = tk.Toplevel(self.root)
-        self.popup.title("Connecting")
+        self.popup.geometry('600x50')
+        self.popup.title("Connection Status")
         self.popup_text = tk.Label(self.popup, text="Connecting to Arduino...", pady=20)
         self.popup_text.pack()
 
@@ -96,7 +94,7 @@ class ArduinoInterface:
 
         else:
 
-            self.popup_text.config(text="Arduino connection failed. Check connection and restart program")
+            self.popup_text.config(text="Arduino connection failed. Check connection and restart program.")
 
     def connect_arduino(self):
         # Method to handle Arduino connection
@@ -161,12 +159,11 @@ class ApplicationWindow:
         # Initialize the StepsDisplay
         self.steps_display = steps_display
 
-        #self.sensor_display = SensorDisplayNew(self.root, arduino)
-        self.sensor_display = SensorDisplay(self.root, arduino)
-
         # Initialize the ControlPanel
-        self.control_panel = ControlPanel(self.layout['frame_bottom'], steps, self.sensor_display)
+        self.control_panel = ControlPanel(self.layout['frame_bottom'], steps) # self.sensor_display
 
+        #self.sensor_display = SensorDisplayNew(self.root, arduino)
+        self.sensor_display = SensorDisplay(self.root, arduino, self.control_panel)
 
         # Initialize the ArduinoInterface
         self.arduino_interface = ArduinoInterface(self.root, arduino, arduino_address, baud_rate, None)
@@ -182,6 +179,8 @@ class ApplicationWindow:
         # This can include saving state, prompting the user, etc.
         self.steps.step_running = False # End while loop of any running threads
         self.arduino_interface.on_close()
+        if self.sensor_display.window_open:
+            self.sensor_display.on_window_close()
         self.root.destroy()
 
 
@@ -213,16 +212,20 @@ class AlarmPopup:
 
 class SensorDisplay:
 
-    def __init__(self, root, arduino):
+    def __init__(self, root, arduino, control_panel):
+        self.window_open = False
         self.refresh_rate_millis = 2000
         self.y_axis_resolution = 3000
         self.root = root
         self.arduino = arduino
+        self.control_panel = control_panel
+        control_panel.sensor_display_popup_button.config(command=self.show_popup)
         self.update_id = None
         self.data_labels = {}
         self.graphs = {}
         self.data_points = {}  # Dynamically populated based on analog inputs
         self.graph_mode = tk.IntVar(value=1)
+
     def change_display_settings(self, new_y_axis_resolution, new_refresh_rate):
         # Update y-axis resolution
         self.y_axis_resolution = new_y_axis_resolution
@@ -322,6 +325,11 @@ class SensorDisplay:
         radio_button2.pack(side='left')
 
     def show_popup(self):
+
+        self.window_open = True
+
+        self.control_panel.sensor_display_popup_button.config(state=tk.DISABLED)
+
         # self.control_panel_frame.sensor_display_popup_button.config(state=tk.DISABLED) move to new class passed to control panel and sensor display
         self.popup = tk.Toplevel(self.root)
         self.popup.title("Raw Sensor Data")
@@ -397,7 +405,9 @@ class SensorDisplay:
         # Destroy the popup window
         self.popup.destroy()
 
-        # self.control_panel_frame.sensor_display_popup_button.config(state=tk.NORMAL)
+        self.control_panel.sensor_display_popup_button.config(state=tk.NORMAL)
+
+        self.window_open = False
 
 
     def release_graph_resources(self):
