@@ -6,7 +6,7 @@ from gui import StepsDisplay
 from gui import AlarmPopup
 import time
 
-arduino_address = '/dev/ttyACM0'
+arduino_address = '/dev/ttyACM1'
 baud_rate = 460800
 
 root = tk.Tk()

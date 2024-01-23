@@ -1,16 +1,20 @@
+import matplotlib
+matplotlib.use('TkAgg')
+print(matplotlib.get_backend())
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from tkinter import font as tkFont
 import tkinter as tk
 from tkinter import ttk
-
+from collections import deque
 from testClass import SensorDisplayNew
 from testClass import SensorDisplayFast
 
 # Buttons
 class ControlPanel: 
     def __init__(self, parent, steps, sensor_display):
+        self.parent = parent
         self.steps = steps
         self.sensor_display = sensor_display
 
@@ -158,7 +162,7 @@ class ApplicationWindow:
         self.steps_display = steps_display
 
         #self.sensor_display = SensorDisplayNew(self.root, arduino)
-        self.sensor_display = SensorDisplayFast(self.root, arduino)
+        self.sensor_display = SensorDisplay(self.root, arduino)
 
         # Initialize the ControlPanel
         self.control_panel = ControlPanel(self.layout['frame_bottom'], steps, self.sensor_display)
@@ -209,13 +213,60 @@ class AlarmPopup:
 
 class SensorDisplay:
 
-    def __init__(self, parent, arduino):
-        self.root = parent
+    def __init__(self, root, arduino):
+        self.refresh_rate_millis = 2000
+        self.y_axis_resolution = 3000
+        self.root = root
         self.arduino = arduino
         self.update_id = None
         self.data_labels = {}
         self.graphs = {}
         self.data_points = {}  # Dynamically populated based on analog inputs
+        self.graph_mode = tk.IntVar(value=1)
+    def change_display_settings(self, new_y_axis_resolution, new_refresh_rate):
+        # Update y-axis resolution
+        self.y_axis_resolution = new_y_axis_resolution
+        for key in self.graphs:
+            graph = self.graphs[key]
+            ax = graph['ax']
+
+            # Reset y-axis limits and clear data points
+            ax.set_xlim(0, self.y_axis_resolution)
+            self.data_points[key] = deque(maxlen=self.y_axis_resolution)  # Reset data points
+            self.clear_graph_data(key)
+
+        # Update refresh rate
+        self.refresh_rate_millis = new_refresh_rate
+        self.restart_display_loop()
+
+    def clear_graph_data(self, key):
+        if key in self.graphs:
+            graph = self.graphs[key]
+            line = graph['line']
+            canvas = graph['canvas']
+
+            # Clear the line data
+            line.set_data([], [])
+            canvas.draw()
+
+    def update_graph_layout(self, key):
+        if key in self.graphs:
+            graph = self.graphs[key]
+            canvas = graph['canvas']
+            ax = graph['ax']
+            canvas.draw()
+            graph['bg'] = canvas.copy_from_bbox(ax.bbox)
+
+    def restart_display_loop(self):
+        self.stop_displaying()
+        self.start_displaying()
+
+    def on_radio_button_change(self):
+        # Check the value of 'selected_function' and call the appropriate function
+        if self.graph_mode.get() == 1:
+            self.change_display_settings(new_y_axis_resolution=2000, new_refresh_rate=3000)
+        elif self.graph_mode.get() == 2:
+            self.change_display_settings(300, 20)
 
     def read_arduino(self):
         if self.arduino.connection_ready:
@@ -239,13 +290,51 @@ class SensorDisplay:
 
         return data
 
+    def initialize_widgets(self, parent_frame, bottom_frame):
+        # Initialize main widgets in the parent_frame
+
+        data = self.read_arduino()
+        for key in data.keys():
+            var = tk.StringVar()
+            label = tk.Label(parent_frame, textvariable=var)
+            label.pack(anchor='nw', pady=2, padx=5)
+            self.data_labels[key] = var
+
+            if key.startswith("A"):  # For analog inputs, create graphs
+                self.data_points[key] = deque(maxlen=self.y_axis_resolution)
+                
+                fig, ax = plt.subplots(figsize=(10, 5), dpi=100)
+                line, = ax.plot([], [], linewidth=0.5, color=('teal'))
+                ax.set_xlim(0, self.y_axis_resolution)
+                ax.set_ylim(0, 1023)
+
+                canvas = FigureCanvasTkAgg(fig, master=parent_frame)
+                canvas_widget = canvas.get_tk_widget()
+                canvas_widget.pack(anchor='nw', pady=2, padx=5)
+
+                canvas.draw()
+                self.graphs[key] = {'fig': fig, 'ax': ax, 'line': line, 'canvas': canvas, 'bg': canvas.copy_from_bbox(ax.bbox)}
+
+        # Initialize radio buttons in the bottom_frame
+        radio_button1 = tk.Radiobutton(bottom_frame, text="Slow refresh, long logging time", variable=self.graph_mode, value=1, command=self.on_radio_button_change)
+        radio_button2 = tk.Radiobutton(bottom_frame, text="Fast refresh, short logging time", variable=self.graph_mode, value=2, command=self.on_radio_button_change)
+        radio_button1.pack(side='left')
+        radio_button2.pack(side='left')
+
     def show_popup(self):
+        # self.control_panel_frame.sensor_display_popup_button.config(state=tk.DISABLED) move to new class passed to control panel and sensor display
         self.popup = tk.Toplevel(self.root)
         self.popup.title("Raw Sensor Data")
         self.popup.geometry("800x500")
 
-        self.canvas = tk.Canvas(self.popup)
-        scrollbar = tk.Scrollbar(self.popup, orient="vertical", command=self.canvas.yview)
+        popup_content_frame = tk.Frame(self.popup)
+        popup_content_frame.pack(side="top", fill="both", expand=True)
+
+        popup_bottom_frame = tk.Frame(self.popup)
+        popup_bottom_frame.pack(side="bottom", fill="x")
+
+        self.canvas = tk.Canvas(popup_content_frame)
+        scrollbar = tk.Scrollbar(popup_content_frame, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = tk.Frame(self.canvas)
 
         self.scrollable_frame.bind(
@@ -261,43 +350,14 @@ class SensorDisplay:
         self.canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        self.initialize_widgets(self.scrollable_frame, popup_bottom_frame)
+
         self.popup.protocol("WM_DELETE_WINDOW", self.on_window_close)
-
-        self.initialize_widgets()
         self.start_displaying()
-
-    def initialize_widgets(self):
-        data = self.read_arduino()
-        for key in data.keys():
-            var = tk.StringVar()
-            label = tk.Label(self.scrollable_frame, textvariable=var)
-            label.pack(anchor='nw', pady=2, padx=5)
-            self.data_labels[key] = var
-
-            if key.startswith("A"):  # For analog inputs, create graphs
-                self.data_points[key] = []  # Initialize data points list
-                fig, ax = plt.subplots(figsize=(10, 5), dpi=100)
-                line, = ax.plot([], [], 'r-')
-                ax.set_xlim(0, 100)  # Assuming you want to plot last 50 points
-                ax.set_ylim(0, 1023)  # Assuming value ranges from 0-1023
-
-                canvas = FigureCanvasTkAgg(fig, master=self.scrollable_frame)
-                canvas_widget = canvas.get_tk_widget()
-                canvas_widget.pack(anchor='nw', pady=2, padx=5)
-
-                # Draw the canvas to initialize everything
-                canvas.draw()
-                # Now capture the background
-                self.graphs[key] = {'fig': fig, 'ax': ax, 'line': line, 'canvas': canvas, 'bg': canvas.copy_from_bbox(ax.bbox)}
 
     def update_graph(self, key, value):
         if key in self.graphs:
             self.data_points[key].append(value)
-            # Keep only the last 50 data points
-            if len(self.data_points[key]) > 100:
-                self.data_points[key].pop(0)
-                #self.data_points[key] = self.data_points[key][-50:]
-
             graph = self.graphs[key]
             line = graph['line']
             canvas = graph['canvas']
@@ -322,7 +382,7 @@ class SensorDisplay:
                 self.data_labels[key].set(f"{key}: {value}")
             self.update_graph(key, value)
 
-        self.update_id = self.root.after(200, self.update_data)
+        self.update_id = self.root.after(self.refresh_rate_millis, self.update_data)
 
     def stop_displaying(self):
         if self.update_id is not None:
@@ -331,27 +391,25 @@ class SensorDisplay:
 
     def on_window_close(self):
         self.stop_displaying()
-
-        # Reset or clear the background buffer if necessary
-        # (Depends on your specific implementation with blit)
-        for key in self.graphs:
-            graph = self.graphs[key]
-            canvas = graph['canvas']
-            ax = graph['ax']
-            fig = graph['fig']
-            
-            # Redraw the entire figure to reset the state (if needed)
-            ax.draw(fig.canvas.get_renderer())
-            canvas.draw()
-
-            # Destroy the canvas widget
-            canvas_widget = canvas.get_tk_widget()
-            canvas_widget.destroy()
-            
-            print("Erased graph")
+  
+        self.release_graph_resources()
 
         # Destroy the popup window
         self.popup.destroy()
 
-        print("Called popup.destroy")
+        # self.control_panel_frame.sensor_display_popup_button.config(state=tk.NORMAL)
+
+
+    def release_graph_resources(self):
+        for key, graph in self.graphs.items():
+            # Close the Matplotlib figure
+            plt.close(graph['fig'])
+
+            # Destroy the Tkinter canvas widget
+            canvas_widget = graph['canvas'].get_tk_widget()
+            canvas_widget.destroy()
+
+        # Clear the dictionary
+        self.graphs.clear()
+
 

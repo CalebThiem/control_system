@@ -5,6 +5,7 @@ from matplotlib.figure import Figure # Old implementation
 import time
 import gc
 from collections import deque
+import threading
 class SensorDisplay:
 
     def __init__(self, parent, arduino):
@@ -482,8 +483,8 @@ class SensorDisplayFast:
 
     def __init__(self, parent, arduino):
         
-        self.refresh_rate = 100
-        self.y_axis_length = 100
+        self.refresh_rate = 250
+        self.y_axis_length = 300
 
         self.root = parent
         self.arduino = arduino
@@ -518,7 +519,7 @@ class SensorDisplayFast:
     def show_popup(self):
         self.popup = tk.Toplevel(self.root)
         self.popup.title("Raw Sensor Data")
-        self.popup.geometry("800x500")
+        #self.popup.geometry("800x500")
 
         self.canvas = tk.Canvas(self.popup)
         scrollbar = tk.Scrollbar(self.popup, orient="vertical", command=self.canvas.yview)
@@ -558,7 +559,7 @@ class SensorDisplayFast:
         fig = Figure(figsize=(10, 5), dpi=100)
         ax = fig.add_subplot(111)
 
-        ax.set_xlabel(f"Data Points (approx. {self.refresh_rate} per second)")
+        ax.set_xlabel(f"Data Points")
         ax.set_ylabel("ADC Reading (0=0V, 1023=5V)")
 
         canvas = FigureCanvasTkAgg(fig, master=self.scrollable_frame)
@@ -581,7 +582,7 @@ class SensorDisplayFast:
         if graph['line'] is None:
             graph['line'], = graph['ax'].plot(x_data, y_data, 'r-')
             graph['ax'].set_xlim(0, self.y_axis_length)
-            graph['ax'].set_ylim(min(y_data), 1023)
+            graph['ax'].set_ylim(0, 1023)
         else:
             graph['line'].set_data(x_data, y_data)
 
@@ -612,7 +613,7 @@ class SensorDisplayFast:
             if key in self.data_labels:
                 self.data_labels[key].set(f"{key}: {value}")
             if key in self.graphs:
-                self.update_graph(key, value)
+                threading.Thread(target=self.update_graph, args=(key, value)).start()
 
         self.update_id = self.root.after(self.refresh_rate, self.update_data)
 
