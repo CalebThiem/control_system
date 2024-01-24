@@ -4,9 +4,10 @@ from steps import Steps
 from gui import ApplicationWindow
 from gui import StepsDisplay
 from gui import AlarmPopup
+from pin_handler import PinHandler
 import time
 
-arduino_address = '/dev/ttyACM0'
+arduino_address = '/dev/ttyACM1'
 baud_rate = 460800
 
 root = tk.Tk()
@@ -40,11 +41,13 @@ layout['frame_bottom'].grid_propagate(False)
 
 arduino = Arduino()
 
+pin_handler = PinHandler()
+
 steps_display = StepsDisplay(layout['frame_left'], number_of_labels=14, pady=10)
 
 steps = Steps(steps_display, arduino)
 
-application_window = ApplicationWindow(root, layout, steps, steps_display, arduino, arduino_address, baud_rate)
+application_window = ApplicationWindow(root, layout, steps, steps_display, pin_handler, arduino, arduino_address, baud_rate)
 
 alarm_popup = AlarmPopup(root, steps, stop_button_handler=application_window.control_panel.stop_button_press)
 

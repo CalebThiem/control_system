@@ -120,6 +120,8 @@ class Steps:
 
                     break
 
+                # Check advancement conditions
+
                 if time.time() - start_time >= 5:
 
                     self.cancel()
@@ -239,6 +241,14 @@ class Steps:
         print("cancel called")
 
         self.step_running = False
+
+        if self.spv_control.rotate_SPV:
+
+            self.spv_control.rotate_SPV = False
+
+        if self.spv_control.inflation_cycle_running:
+
+            self.spv_control.inflation_cycle_running = False
 
         if (type(self.queued_thread) == threading.Timer):
 

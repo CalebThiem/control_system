@@ -74,3 +74,9 @@ class PinHandler:
         for i in relayNumbers:
 
             self.pin_array[i - 1] = "0"
+
+    def resetAll(self):
+
+        for i in range(len(self.pin_array)):
+
+            self.pin_array[i] = "0"

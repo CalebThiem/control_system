@@ -18,5 +18,8 @@ arduino = Arduino()
 
 arduino.connect('/dev/ttyACM0', 9000)
 
-pinHandler = PinHandler()
-spv = SpvControl(pinHandler, arduino)
+pin_handler = PinHandler()
+
+spv = SpvControl(pin_handler, arduino)
+
+

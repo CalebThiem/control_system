@@ -20,7 +20,8 @@ class ControlPanel:
         self.next_button = tk.Button(parent, text="Next", command=self.next_button_press)
         self.previous_button = tk.Button(parent, text="Previous", command=self.previous_button_press)
         
-        self.sensor_display_popup_button = tk.Button(parent, text="Raw Input Data") # command=self.sensor_display.show_popup
+        self.sensor_display_popup_button = tk.Button(parent, text="Raw Input Data")
+        self.manual_control_popup_button = tk.Button(parent, text="Manual Control")
 
         # Layout the buttons
         self.start_button.pack(side=tk.LEFT, padx=20, pady=20)
@@ -28,6 +29,7 @@ class ControlPanel:
         self.next_button.pack(side=tk.LEFT, padx=20, pady=20)
         self.previous_button.pack(side=tk.LEFT, padx=20, pady=20)
         self.sensor_display_popup_button.pack(side=tk.LEFT, padx=20, pady=20)
+        self.manual_control_popup_button.pack(side=tk.LEFT, padx=20, pady=20)
 
     def start_button_press(self):
         # Grey out start button, enable stop button
@@ -150,7 +152,7 @@ class StepsDisplay:
 
 # Generates the UI, creates instances of necessary classes to make everything work
 class ApplicationWindow:
-    def __init__(self, root, layout, steps, steps_display, arduino, arduino_address, baud_rate):
+    def __init__(self, root, layout, steps, steps_display, pin_handler, arduino, arduino_address, baud_rate):
         self.root = root
         self.steps = steps
         
@@ -162,8 +164,9 @@ class ApplicationWindow:
         # Initialize the ControlPanel
         self.control_panel = ControlPanel(self.layout['frame_bottom'], steps) # self.sensor_display
 
-        #self.sensor_display = SensorDisplayNew(self.root, arduino)
         self.sensor_display = SensorDisplay(self.root, arduino, self.control_panel)
+
+        self.button_grid = ButtonGrid(self.root, pin_handler, arduino, self.control_panel)
 
         # Initialize the ArduinoInterface
         self.arduino_interface = ArduinoInterface(self.root, arduino, arduino_address, baud_rate, None)
@@ -210,75 +213,208 @@ class AlarmPopup:
             # Reset the alarm flag
             self.steps.alarm_on.set(False)
 
+
 class SensorDisplay:
 
     def __init__(self, root, arduino, control_panel):
+        # Window properties
         self.window_open = False
-        self.refresh_rate_millis = 2000
-        self.y_axis_resolution = 3000
         self.root = root
         self.arduino = arduino
         self.control_panel = control_panel
-        control_panel.sensor_display_popup_button.config(command=self.show_popup)
-        self.update_id = None
+
+        # Graph settings
+        self.slow_refresh_rate_millis = 1000
+        self.slow_y_axis_resolution = 2000
+        self.fast_refresh_rate_millis = 20
+        self.fast_y_axis_resolution = 150
+        self.refresh_rate_millis = self.slow_refresh_rate_millis
+        self.y_axis_resolution = self.slow_y_axis_resolution
+
+        # Graph mode selection
+        self.graph_mode = tk.IntVar(value=1)
+
+        # Data structures for storing sensor data and graph objects
         self.data_labels = {}
         self.graphs = {}
         self.data_points = {}  # Dynamically populated based on analog inputs
-        self.graph_mode = tk.IntVar(value=1)
+
+        # Configure control panel button to show sensor display popup
+        control_panel.sensor_display_popup_button.config(command=self.show_popup)
+
+        # Initialize update ID for data refreshing
+        self.update_id = None
+
+    # Public methods
+    def start_displaying(self):
+        """Begin the data update loop."""
+        self.update_data()
+
+    def show_popup(self):
+        """Create and show a popup window with sensor data and graphs."""
+        # Popup window setup
+        self.window_open = True
+        self.control_panel.sensor_display_popup_button.config(state=tk.DISABLED)
+        self.popup = tk.Toplevel(self.root)
+        self.popup.title("Raw Sensor Data")
+        self.popup.geometry("800x500")
+        self.setup_popup_contents()
+        self.popup.protocol("WM_DELETE_WINDOW", self.on_window_close)
+        self.start_displaying()
+
+    # Private helper methods
+    def setup_popup_contents(self):
+        """Setup the contents of the popup window."""
+        # Create frames for content and controls
+        popup_content_frame = tk.Frame(self.popup)
+        popup_content_frame.pack(side="top", fill="both", expand=True)
+        popup_bottom_frame = tk.Frame(self.popup)
+        popup_bottom_frame.pack(side="bottom", fill="x")
+
+        # Setup scrollable canvas
+        self.canvas = tk.Canvas(popup_content_frame)
+        scrollbar = tk.Scrollbar(popup_content_frame, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas)
+        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        self.canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Initialize widgets for data display and controls
+        self.initialize_widgets(self.scrollable_frame, popup_bottom_frame)
+
+    def initialize_widgets(self, parent_frame, bottom_frame):
+        """Initialize widgets for displaying data and controls."""
+        data = self.read_arduino()
+
+        # Setup data labels and graphs for each sensor
+        for key in data.keys():
+            self.setup_data_label(parent_frame, key)
+            if key.startswith("A"):  # For analog inputs, create graphs
+                self.setup_graph(parent_frame, key)
+
+        # Setup control widgets
+        self.setup_control_widgets(bottom_frame)
+
+    def setup_data_label(self, parent_frame, key):
+        """Setup data label for a sensor."""
+        var = tk.StringVar()
+        label = tk.Label(parent_frame, textvariable=var)
+        label.pack(anchor='nw', pady=2, padx=5)
+        self.data_labels[key] = var
+
+    def setup_graph(self, parent_frame, key):
+        """Setup graph for a sensor."""
+        self.data_points[key] = deque(maxlen=self.y_axis_resolution)
+        fig, ax = plt.subplots(figsize=(10, 5), dpi=100)
+        line, = ax.plot([], [], linewidth=0.5, color=('teal'))
+        ax.set_xlim(0, self.y_axis_resolution)
+        ax.set_ylim(0, 1023)
+        ax.set_xlabel('Data Points')
+        ax.set_ylabel('ADC Value (0=0V, 1023=5V)')
+        canvas = FigureCanvasTkAgg(fig, master=parent_frame)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(anchor='nw', pady=2, padx=5)
+        canvas.draw()
+        self.graphs[key] = {'fig': fig, 'ax': ax, 'line': line, 'canvas': canvas, 'bg': canvas.copy_from_bbox(ax.bbox)}
+
+    def setup_control_widgets(self, bottom_frame):
+        """Setup control widgets in the bottom frame."""
+        radio_button1 = tk.Radiobutton(bottom_frame, text="Slow refresh, long logging time", variable=self.graph_mode, value=1, command=self.on_radio_button_change)
+        radio_button2 = tk.Radiobutton(bottom_frame, text="Fast refresh, short logging time", variable=self.graph_mode, value=2, command=self.on_radio_button_change)
+        radio_button1.pack(side='left')
+        radio_button2.pack(side='left')
+
+    def on_window_close(self):
+        """Handle the closing of the popup window."""
+        self.stop_displaying()
+        self.release_graph_resources()
+        self.popup.destroy()
+        self.control_panel.sensor_display_popup_button.config(state=tk.NORMAL)
+        self.window_open = False
+
+    def release_graph_resources(self):
+        """Release resources used by graphs."""
+        for key, graph in self.graphs.items():
+            plt.close(graph['fig'])  # Close the Matplotlib figure
+            canvas_widget = graph['canvas'].get_tk_widget()
+            canvas_widget.destroy()  # Destroy the Tkinter canvas widget
+        self.graphs.clear()
+
+    def on_radio_button_change(self):
+        """Handle changes in the radio button selection."""
+        if self.graph_mode.get() == 1:
+            self.change_display_settings(new_y_axis_resolution=self.slow_y_axis_resolution, new_refresh_rate=self.slow_refresh_rate_millis)
+        elif self.graph_mode.get() == 2:
+            self.change_display_settings(new_y_axis_resolution=self.fast_y_axis_resolution, new_refresh_rate=self.fast_refresh_rate_millis)
 
     def change_display_settings(self, new_y_axis_resolution, new_refresh_rate):
-        # Update y-axis resolution
+        """Change the display settings for graphs."""
         self.y_axis_resolution = new_y_axis_resolution
         for key in self.graphs:
-            graph = self.graphs[key]
-            ax = graph['ax']
-
-            # Reset y-axis limits and clear data points
-            ax.set_xlim(0, self.y_axis_resolution)
-            self.data_points[key] = deque(maxlen=self.y_axis_resolution)  # Reset data points
-            self.clear_graph_data(key)
-
-        # Update refresh rate
+            self.update_graph_limits(key, new_y_axis_resolution)
         self.refresh_rate_millis = new_refresh_rate
         self.restart_display_loop()
 
-    def clear_graph_data(self, key):
+    def update_graph_limits(self, key, new_y_axis_resolution):
+        """Update the limits and data points for a specific graph."""
         if key in self.graphs:
             graph = self.graphs[key]
-            line = graph['line']
-            canvas = graph['canvas']
-
-            # Clear the line data
-            line.set_data([], [])
-            canvas.draw()
-
-    def update_graph_layout(self, key):
-        if key in self.graphs:
-            graph = self.graphs[key]
-            canvas = graph['canvas']
             ax = graph['ax']
-            canvas.draw()
-            graph['bg'] = canvas.copy_from_bbox(ax.bbox)
+            ax.set_xlim(0, new_y_axis_resolution)
+            self.data_points[key] = deque(maxlen=new_y_axis_resolution)  # Reset data points
+            self.clear_graph_data(key)
 
     def restart_display_loop(self):
+        """Restart the display loop after settings change."""
         self.stop_displaying()
         self.start_displaying()
 
-    def on_radio_button_change(self):
-        # Check the value of 'selected_function' and call the appropriate function
-        if self.graph_mode.get() == 1:
-            self.change_display_settings(new_y_axis_resolution=2000, new_refresh_rate=3000)
-        elif self.graph_mode.get() == 2:
-            self.change_display_settings(300, 20)
+    def stop_displaying(self):
+        """Stop the data update loop."""
+        if self.update_id is not None:
+            self.root.after_cancel(self.update_id)
+            print("Stopped loop")
+
+    def clear_graph_data(self, key):
+        """Clear the data from a specific graph."""
+        if key in self.graphs:
+            graph = self.graphs[key]
+            line = graph['line']
+            line.set_data([], [])
+            graph['canvas'].draw()
+
+    def update_data(self):
+        """Update data for all sensors and graphs."""
+        data = self.read_arduino()
+        for key, value in data.items():
+            if key in self.data_labels:
+                self.data_labels[key].set(f"{key}: {value}")
+            self.update_graph(key, value)
+        self.update_id = self.root.after(self.refresh_rate_millis, self.update_data)
+
+    def update_graph(self, key, value):
+        """Update a specific graph with new data."""
+        if key in self.graphs:
+            self.data_points[key].append(value)
+            graph = self.graphs[key]
+            line = graph['line']
+            line.set_data(range(len(self.data_points[key])), self.data_points[key])
+            canvas = graph['canvas']
+            canvas.restore_region(graph['bg'])
+            graph['ax'].draw_artist(line)
+            canvas.blit(graph['ax'].bbox)
 
     def read_arduino(self):
+        """Read data from Arduino and format it."""
         if self.arduino.connection_ready:
             with self.arduino.lock:
                 self.arduino_input_data = self.arduino.read_inputs()
 
-        data = dict()
-        digital_input_counter = 30
-        analog_input_counter = 0
+        data = {}
+        digital_input_counter = 30  # First digital input used is 30 on Arduino Mega
+        analog_input_counter = 6   # First analog input used is A6 
 
         for i in self.arduino_input_data:
             if len(i) == 1:
@@ -293,133 +429,78 @@ class SensorDisplay:
 
         return data
 
-    def initialize_widgets(self, parent_frame, bottom_frame):
-        # Initialize main widgets in the parent_frame
 
-        data = self.read_arduino()
-        for key in data.keys():
-            var = tk.StringVar()
-            label = tk.Label(parent_frame, textvariable=var)
-            label.pack(anchor='nw', pady=2, padx=5)
-            self.data_labels[key] = var
+class ButtonGrid:
+    def __init__(self, parent, pin_handler, arduino, control_panel):
+        self.root = parent
+        self.buttons = {}
+        self.defaultbg = self.root.cget('bg')
+        self.pin_handler = pin_handler
+        self.arduino = arduino
+        self.control_panel = control_panel
 
-            if key.startswith("A"):  # For analog inputs, create graphs
-                self.data_points[key] = deque(maxlen=self.y_axis_resolution)
-                
-                fig, ax = plt.subplots(figsize=(10, 5), dpi=100)
-                line, = ax.plot([], [], linewidth=0.5, color=('teal'))
-                ax.set_xlim(0, self.y_axis_resolution)
-                ax.set_ylim(0, 1023)
+        self.control_panel.manual_control_popup_button.config(command=self.create_window)
+        
 
-                canvas = FigureCanvasTkAgg(fig, master=parent_frame)
-                canvas_widget = canvas.get_tk_widget()
-                canvas_widget.pack(anchor='nw', pady=2, padx=5)
-
-                canvas.draw()
-                self.graphs[key] = {'fig': fig, 'ax': ax, 'line': line, 'canvas': canvas, 'bg': canvas.copy_from_bbox(ax.bbox)}
-
-        # Initialize radio buttons in the bottom_frame
-        radio_button1 = tk.Radiobutton(bottom_frame, text="Slow refresh, long logging time", variable=self.graph_mode, value=1, command=self.on_radio_button_change)
-        radio_button2 = tk.Radiobutton(bottom_frame, text="Fast refresh, short logging time", variable=self.graph_mode, value=2, command=self.on_radio_button_change)
-        radio_button1.pack(side='left')
-        radio_button2.pack(side='left')
-
-    def show_popup(self):
-
-        self.window_open = True
-
-        self.control_panel.sensor_display_popup_button.config(state=tk.DISABLED)
-
-        # self.control_panel_frame.sensor_display_popup_button.config(state=tk.DISABLED) move to new class passed to control panel and sensor display
+    def create_window(self):
         self.popup = tk.Toplevel(self.root)
-        self.popup.title("Raw Sensor Data")
-        self.popup.geometry("800x500")
 
-        popup_content_frame = tk.Frame(self.popup)
-        popup_content_frame.pack(side="top", fill="both", expand=True)
-
-        popup_bottom_frame = tk.Frame(self.popup)
-        popup_bottom_frame.pack(side="bottom", fill="x")
-
-        self.canvas = tk.Canvas(popup_content_frame)
-        scrollbar = tk.Scrollbar(popup_content_frame, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = tk.Frame(self.canvas)
-
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(
-                scrollregion=self.canvas.bbox("all")
-            )
-        )
-
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.canvas.configure(yscrollcommand=scrollbar.set)
-
-        self.canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        self.initialize_widgets(self.scrollable_frame, popup_bottom_frame)
-
+        self.control_panel.manual_control_popup_button.config(state=tk.DISABLED)
         self.popup.protocol("WM_DELETE_WINDOW", self.on_window_close)
-        self.start_displaying()
+        self.popup.title("Manual Control")
+        self.populate_buttons()
 
-    def update_graph(self, key, value):
-        if key in self.graphs:
-            self.data_points[key].append(value)
-            graph = self.graphs[key]
-            line = graph['line']
-            canvas = graph['canvas']
-            ax = graph['ax']
-            bg = graph['bg']
+    def populate_buttons(self):
+        for i in range(1, 97):
+            button = tk.Button(self.popup, text=str(i), command=lambda i=i: self.button_press(i), highlightbackground = self.defaultbg, highlightthickness = "2")
+            button.grid(row=(i-1)//12, column=(i-1)%12, sticky="nsew")
 
-            # Update the line data
-            line.set_data(range(len(self.data_points[key])), self.data_points[key])
+            # Configure row and column weights so buttons expand
+            self.popup.grid_rowconfigure((i-1)//12, weight=1)
+            self.popup.grid_columnconfigure((i-1)%12, weight=1)
+            self.buttons[i] = button
 
-            # Restore the background and draw the updated line
-            canvas.restore_region(bg)
-            ax.draw_artist(line)
-            canvas.blit(ax.bbox)
+    def button_press(self, number):
+        button = self.buttons[number]
+        print(f"Button {number} pressed")
 
-    def start_displaying(self):
-        self.update_data()
+        # Toggle red outline
+        if button.cget("highlightbackground") == self.defaultbg:
+            button.config(highlightbackground="red")
 
-    def update_data(self):
-        data = self.read_arduino()
-        for key, value in data.items():
-            if key in self.data_labels:
-                self.data_labels[key].set(f"{key}: {value}")
-            self.update_graph(key, value)
+            # --- Relay handling code
+            with self.pin_handler.lock:
 
-        self.update_id = self.root.after(self.refresh_rate_millis, self.update_data)
+                self.pin_handler.setRelaysOn([number])
 
-    def stop_displaying(self):
-        if self.update_id is not None:
-            self.root.after_cancel(self.update_id)
-            print("Stopped loop")
+            with self.arduino.lock:
+
+                print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
+
+            # --- End 
+
+        else:
+            button.config(highlightbackground=self.defaultbg)
+            
+            with self.pin_handler.lock:
+
+                self.pin_handler.setRelaysOff([number])
+            
+            with self.arduino.lock:
+
+                print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
 
     def on_window_close(self):
-        self.stop_displaying()
-  
-        self.release_graph_resources()
 
-        # Destroy the popup window
+        with self.pin_handler.lock:
+            
+            self.pin_handler.resetAll()
+
+        with self.arduino.lock:
+
+            print("Resetting all pins...", self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
+
+
+        self.control_panel.manual_control_popup_button.config(state=tk.NORMAL)
+
         self.popup.destroy()
-
-        self.control_panel.sensor_display_popup_button.config(state=tk.NORMAL)
-
-        self.window_open = False
-
-
-    def release_graph_resources(self):
-        for key, graph in self.graphs.items():
-            # Close the Matplotlib figure
-            plt.close(graph['fig'])
-
-            # Destroy the Tkinter canvas widget
-            canvas_widget = graph['canvas'].get_tk_widget()
-            canvas_widget.destroy()
-
-        # Clear the dictionary
-        self.graphs.clear()
-
-

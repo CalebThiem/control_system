@@ -1,5 +1,6 @@
 import time
 import threading
+import itertools
 
 '''
 Basket control relay numbers and time parameters are defined here.
@@ -78,6 +79,27 @@ class SpvControl:
         self.vent = [6]
         self.vacuum_pump = [7]
         self.none = None
+        
+        self.motor_relays = [
+
+            self.motor_clockwise,
+            self.motor_anticlockwise
+            
+            ]
+
+        self.motor_relays = list(itertools.chain(*self.motor_relays))
+
+        self.bladder_relays = [
+
+            self.high_pressure,
+            self.medium_pressure,
+            self.low_pressure,
+            self.vent,
+            self.vacuum_pump
+            
+            ]
+
+        self.bladder_relays = list(itertools.chain(*self.bladder_relays))
 
         # Tracking for number of rotations
 
@@ -145,6 +167,10 @@ class SpvControl:
     def start_rotation(self):
 
         self.rotate_SPV = True
+        
+        with self.pin_handler.lock:
+
+            self.pin_handler.excludePins(self.motor_relays)
 
         rotation = threading.Thread(target=self.rotation_manager)
         rotation.start()
@@ -152,6 +178,10 @@ class SpvControl:
     def stop_rotation(self):
 
         self.rotate_SPV = False
+        
+        with self.pin_handler.lock:
+
+            self.pin_handler.undoExcludePins(self.motor_relays)
 
     def set_bladder_state(self, state_to_engage):
 
@@ -201,9 +231,19 @@ class SpvControl:
 
         self.inflation_cycle_running = True
 
+        with self.pin_handler.lock:
+
+            self.pin_handler.excludePins(self.bladder_relays)
+
         inflation_cycle_thread = threading.Thread(target=self.inflation_cycle)
         inflation_cycle_thread.start()
 
     def disable_inflation_cycle(self):
 
         self.inflation_cycle_running = False
+
+        with self.pin_handler.lock:
+
+            self.pin_handler.undoExcludePins(self.bladder_relays)
+
+    
