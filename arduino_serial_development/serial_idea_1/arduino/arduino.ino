@@ -90,7 +90,7 @@ Received: Validated\n
 
 IMPORTANT!
 
-Move the declerations
+After downloading the MuxSheild2 library, move the declerations
 
 int _shiftReg1[16]={0};
 int _shiftReg2[16]={0};
@@ -101,17 +101,17 @@ This prevents flickering of the pin states when using more than one board.
 
 */
 
-// const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
 
 // Digital out (PWM capable) pins 2 through 13 are available if needed
 
-//const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
+const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
 
 // Analog pins A0 to A5 are used for MuxShield2 communication
 
-const int digitalReadPins[12] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+// const int digitalReadPins[12] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
 
-const int analogReadPins[6] = {A0, A1, A2, A3, A4, A5};
+// const int analogReadPins[6] = {A0, A1, A2, A3, A4, A5};
 
 #define digitalReadPinMode INPUT_PULLUP
 
@@ -125,10 +125,10 @@ FastCRC32 CRC32;
 
 //Initialize the first MuxShield2
 
-int S10 = 22;
-int S11 = 23;
-int S12 = 24;
-int S13 = 25;
+int S10 = 2;
+int S11 = 3;
+int S12 = 4;
+int S13 = 5;
 
 int IO11 = A0;
 int IO12 = A1;
@@ -143,10 +143,10 @@ MuxShield muxShield1(S10, S11, S12, S13, OUTMD1, IOS11, IOS12, IOS13, IO11, IO12
 
 // Initialize the second MuxShield2
 
-int S20 = 26;
-int S21 = 27;
-int S22 = 28;
-int S23 = 29;
+int S20 = 6;
+int S21 = 7;
+int S22 = 8;
+int S23 = 9;
 
 int IO21 = A3;
 int IO22 = A4;
