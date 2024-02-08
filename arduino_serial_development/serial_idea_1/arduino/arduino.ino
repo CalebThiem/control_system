@@ -256,10 +256,9 @@ void loop() {
   
 } 
 
+// Set MuxShield2 pins
 
 void setMuxShieldPins(char * receivedData) {
-
-    // Set MuxShield2 pins
 
     unsigned int received_data_length = strlen(receivedData);
 
@@ -283,6 +282,8 @@ void setMuxShieldPins(char * receivedData) {
 
       }
       
+    return;
+
     }
 
     // Check if the first MuxShield2 pins are all used, but the second's aren't, set pins to specified values
@@ -301,6 +302,8 @@ void setMuxShieldPins(char * receivedData) {
 
       }
 
+      return;
+
     }
 
     // Check if the first MuxShield's pins aren't all used, set pins to specified values
@@ -312,6 +315,8 @@ void setMuxShieldPins(char * receivedData) {
         mux_shield_1_control(i - 7, receivedData[i] - '0');
 
       }
+    
+      return;
 
     }
 

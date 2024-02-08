@@ -8,7 +8,7 @@ from pin_handler import PinHandler
 import time
 
 arduino_address = '/dev/ttyACM1'
-baud_rate = 460800
+baud_rate = 9600
 
 root = tk.Tk()
 root.title("test GUI")
