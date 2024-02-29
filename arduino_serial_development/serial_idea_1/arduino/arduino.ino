@@ -1,72 +1,162 @@
 /*
-Written by Caleb Thiem and GPT-4. Receives up to 300 characters (stable), 1 or 0, from a PC via serial communication to 
-control output pins. The position of the character denotes the pin number, and the value the pin state. 
-It then sends back the received data for verification.
+Written by Caleb Thiem. 
 
-This script receives a series of binary values from a PC via serial communication. 
-The data received is a string of characters, each of which is either '0' or '1'. 
-The position of each character in the string corresponds to a specific pin on the Arduino, 
-and the value of the character ('0' or '1') corresponds to the desired state of that pin (LOW or HIGH, respectively).
+# Description #
 
-The script reads the data from the serial buffer, processes it, and then sends it's own data back to the PC. 
-The script uses start and end markers to frame the data, and includes error checking to ensure that the data is received correctly.
+Communicates with an Arduino over serial, sending and receiving strings up to 300 characters in length. 
+Upon receiving a string of 1s and 0s, the script sets digital out pins on two MuxShield2 boards, with 
+1 representing HIGH, and 0 representing LOW, and the position of the character in the string representing
+the pin number. 
 
-The script uses the Arduino's built-in Serial library to handle the serial communication. The baud rate is set to 460800.
+Example:  
+
+111001
+
+Will set the first six pins on the first MuxShield2 board, with pins 1, 2, 3, and 6 being set HIGH, and pins 4 and 5 
+being set low.
+
+If requested, the states of digital input pins 30 through 53, and analog pins A6 through A15 are trasmitted.
+
+Advantages: easy to understand and modify
+
+Disadvantages: inefficient
+
+# General Behaviour #
+
+# Baud Rate #
+
+Arduino opens serial port at 460800 baud.
+
+# Serial Transmission #
+
+Message is up to 300 bytes long. Each byte represents an ASCII text character.
+
+The first byte is a '<'. This signifies the start of the message. 
+
+The next 8 bytes comprise a zero-padded, capitalised hexadecimal CRC32 checksum of the rest of the message, excluding the last character.
+
+The last byte is a '>'. This signifies the end of the message.
+
+Upon receiving a properly formatted message, the Arduino will respond with one of the following ASCII text transmissions:
+
+    "Verified" is sent if the checksum matches the computed checksum
+
+    "ChecksumFailed" is sent if the checksum does not match the computed checksum
+
+
+If the first character after the checksum was a '?', the Arduino will then send
+a message of its own, with identical formatting.
+
+This message is composed of 24 "1" or "0" characters, with each consecutive character representing the state of a digital input pin, 
+representing pins 30 through 53, inclusive. Following this string of 1s and 0s is a dash, followed by ten dash-seperated four digit numbers, 
+each holding the value (0 to 1023) of an analog input pin, beginning with A6 and ending with A15. 
+
+
+Input example:
+
+<8758F833101010111000010101010011110000101010101010>
+
+<checksum-----------output pin states-------------->
+
+
+Output example:
+
+<BC90042C111111111111111111111111-0473-0526-0644-0622-0636-0654-0705-0714-0715-0725>
+
+<checksum---digital pin states--- -A6- -A7- -A8- -A9- -A10 -A11 -A12 -A13 -A14 -A15>
+
+
+Full communication example:
+
+Sent: <8758F833101010111000010101010011110000101010101010>
+
+Received: Validated\n
+
+Sent: <6464C2B0?>
+
+Received: Validated\n
+
+Received: <8F147D37111111111111111111111111-0530-0505-0494-0471-0434-0385-0343-0327-0293-0242>
+
+Sent: <ED82CD11abcx>
+
+Received: ChecksumFailed\n
+
+Sent: <ED82CD11abcd>
+
+Received: Validated\n
+
+
 
 IMPORTANT!
 
-Move the declerations
+After downloading the MuxSheild2 library, move the declerations
 
 int _shiftReg1[16]={0};
 int _shiftReg2[16]={0};
 int _shiftReg3[16]={0};
 
-from the header of MuxShield.cpp to the definition of the MuxShield class (private) in MuxShield.h. 
+from the header of MuxShield.cpp (in the MuxShield library) to the definition of the MuxShield class (private) in MuxShield.h. 
 This prevents flickering of the pin states when using more than one board.
 
 */
 
+const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+
+// Digital out (PWM capable) pins 2 through 13 are available if needed
+
+const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
+
+// Analog pins A0 to A5 are used for MuxShield2 communication
+
+// const int digitalReadPins[12] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+
+// const int analogReadPins[6] = {A0, A1, A2, A3, A4, A5};
+
+#define digitalReadPinMode INPUT_PULLUP
+
+#define analogReadPinMode INPUT
+
 #include <FastCRC.h> // Library for CRC hash function
 
-#include <MuxShield.h> // Library for the Mux Shield 2
+#include <MuxShield.h> // Library for the MuxShield2
 
 FastCRC32 CRC32;
 
-//Initialize the Mux Shield
+//Initialize the first MuxShield2
 
 int S10 = 2;
 int S11 = 3;
 int S12 = 4;
 int S13 = 5;
 
+int IO11 = A0;
+int IO12 = A1;
+int IO13 = A2;
+
+int OUTMD1 = 200; // Nonexistant pins, hardware pins tied to 5V
+int IOS11 = 200;
+int IOS12 = 200;
+int IOS13 = 200; 
+
+MuxShield muxShield1(S10, S11, S12, S13, OUTMD1, IOS11, IOS12, IOS13, IO11, IO12, IO13);
+
+// Initialize the second MuxShield2
+
 int S20 = 6;
 int S21 = 7;
 int S22 = 8;
 int S23 = 9;
 
-int IO11 = A0;
-int IO12 = A1;
-int IO13 = A2;
-
 int IO21 = A3;
 int IO22 = A4;
 int IO23 = A5;
 
-int OUTMD1 = 200; // Nonexistant pin, hardware pins tied to 5V
-int OUTMD2 = 200;
-
-int IOS11 = 200;
-int IOS12 = 200;
-int IOS13 = 200; 
-
+int OUTMD2 = 200; // Nonexistant pins, hardware pins tied to 5V
 int IOS21 = 200;
 int IOS22 = 200;
 int IOS23 = 200;
 
-
-
-
-MuxShield muxShield1(S10, S11, S12, S13, OUTMD1, IOS11, IOS12, IOS13, IO11, IO12, IO13);
 MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22, IO23);
 
 // Define characters to signify beginning and end of transmission
@@ -77,16 +167,12 @@ MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22
 
 #define MAX_MESSAGE_LENGTH 301
 
-#define LED_BUILTIN 13  // Most Arduino boards have a built-in LED on pin 13
-
 #define MUX_BOARD_PIN_COUNT 48
 
 #define CHECKSUM_LENGTH 8
 
 
 char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
-
-// unsigned int receivedDataLength = 0;
 
 char message[MAX_MESSAGE_LENGTH + 1];
 
@@ -108,6 +194,10 @@ void mux_shield_1_control(unsigned int relayNumber, int state);
 
 void mux_shield_2_control(unsigned int relayNumber, int state);
 
+int digitalReadPinsLength = sizeof(digitalReadPins)/sizeof(digitalReadPins[0]);
+
+int analogReadPinsLength = sizeof(analogReadPins)/sizeof(analogReadPins[0]);
+
 
 void setup() {
 
@@ -119,13 +209,30 @@ void setup() {
   muxShield2.setMode(1,DIGITAL_OUT);  
   muxShield2.setMode(2,DIGITAL_OUT);
   muxShield2.setMode(3,DIGITAL_OUT);
+  
+  for (int i = 0; i < digitalReadPinsLength; i++) {
 
-  Serial.begin(460800);
+    pinMode(digitalReadPins[i], digitalReadPinMode);
+
+  }
+
+  for (int i = 0; i < analogReadPinsLength; i++) {
+
+    pinMode(analogReadPins[i], analogReadPinMode);
+
+  }
+
+    Serial.begin(460800);
 }
+
 
 void loop() {
 
+  readPins(digitalReadPins, digitalReadPinsLength, analogReadPins, analogReadPinsLength, message);
+
   if (serialReceive()) {
+
+    // Check if input pin states have been requested 
 
     if (receivedData[8] == '?') {
 
@@ -145,15 +252,13 @@ void loop() {
 
     }
 
-    // Send confirmation message to sender
-
   }
   
 } 
 
-void setMuxShieldPins(char * receivedData) {
+// Set MuxShield2 pins
 
-    // Set MuxShield2 pins with memeory nonesene protection
+void setMuxShieldPins(char * receivedData) {
 
     unsigned int received_data_length = strlen(receivedData);
 
@@ -177,6 +282,8 @@ void setMuxShieldPins(char * receivedData) {
 
       }
       
+    return;
+
     }
 
     // Check if the first MuxShield2 pins are all used, but the second's aren't, set pins to specified values
@@ -195,6 +302,8 @@ void setMuxShieldPins(char * receivedData) {
 
       }
 
+      return;
+
     }
 
     // Check if the first MuxShield's pins aren't all used, set pins to specified values
@@ -206,29 +315,15 @@ void setMuxShieldPins(char * receivedData) {
         mux_shield_1_control(i - 7, receivedData[i] - '0');
 
       }
+    
+      return;
 
     }
 
 }
 
+
 void sendMessage(char * message) {
-
-  // Reset the array used for outgoing transmissions to null bytes
-  // Ensures that transmission will always be null terminated
-
-  for (int i = 0; i <= MAX_MESSAGE_LENGTH; i++) { 
-  
-    message[i] = '\0';
-
-  }
-
-  // Populate outgoiong transmission array with random data for testing (eighth byte and onward)
-
-  for (int i = 7; i <= 292; i++) {
-
-    message[i] = ((random(0, 9)) + '0');
-
-  }
 
   // Populate the first 8 bytes of the outgoing transmission array with a checksum of the rest
 
@@ -245,6 +340,50 @@ void sendMessage(char * message) {
   Serial.write('>');
 
   Serial.write('\n');
+
+}
+
+
+// Read the values of digital and analog pins and write their values to a provided char array
+
+void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPins, int analogReadPinsLength, char* result) {
+
+  // Start writing from the ninth character in the array (first eight characters will be occupied by the checksum)
+
+  int index = 8;
+  
+  // Read each digital input pin and write a 1 to the array if HIGH, and 0 if LOW
+
+  for (int i = 0; i < digitalReadPinsLength; i++) {
+
+    int digitalPinValue = digitalRead(digitalReadPins[i]);
+
+    result[index++] = (digitalPinValue == HIGH) ? '1' : '0';
+  }
+
+  // Read each analog input pin (returns a 10-bit binary number) and write its value to the array as a 0-padded decimal number, with each number seperated by a dash
+  
+  for (int j = 0; j < analogReadPinsLength; j++) {
+
+    // Read the input pin
+
+    int analogPinValue = analogRead(analogReadPins[j]);
+
+    // Add a dash
+
+    sprintf(result + index, "%c", '-');
+
+    index += 1;
+
+    // Write the  0-padded data to the result array
+
+    sprintf(result + index, "%04d", analogPinValue);
+
+    index += 4;
+
+  }
+  
+  result[index] = '\0';  // Null-terminate the string
 
 }
 
@@ -350,20 +489,6 @@ int verify_checksum(char* message) {
 
   unsigned long calculated_checksum = CRC32.crc32((uint8_t*)&message[8], strlen(&message[8]));
 
-  /*
-  
-  Serial.print("Received message: ");
-  Serial.print(message);
-  Serial.print("\n");
-  Serial.print("Received Checksum: ");
-  Serial.print(received_checksum);
-  Serial.print("\n");
-  Serial.print("Calculated Checksum: ");
-  Serial.print(calculated_checksum, HEX);
-  Serial.print("\n");
-  
-  */
-
   // Compare the received and calculated checksums
 
   if (received_checksum_value == calculated_checksum) {
@@ -414,35 +539,6 @@ void generate_checksum(char * message) {
 
 
 
-void toggle_outputs(int toggle) {
-
-    //loop to toggle all IO 1 outputs
-  for (int i=0; i<16; i++)
-  {
-    muxShield1.digitalWriteMS(1,i,toggle);
-
-    muxShield2.digitalWriteMS(1,i,toggle);
-  }
-  
-  //loop to toggle all IO 2 outputs
-  for (int i=0; i<16; i++)
-  {
-    muxShield1.digitalWriteMS(2,i,toggle);
-
-    muxShield2.digitalWriteMS(2,i,toggle);
-  }
-  
-  //loop to toggle all IO 3 outputs
-  for (int i=0; i<16; i++)
-  {
-    muxShield1.digitalWriteMS(3,i,toggle);
-
-    muxShield2.digitalWriteMS(3,i,toggle);
-  }
-  
-}
-
-
 void mux_shield_1_control(unsigned int relayNumber, int state) {
 
   if (relayNumber <= 16) {
@@ -452,9 +548,7 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
     muxShield1.digitalWriteMS(1, relayNumber, state);
 
     return;
-
-   
-    
+ 
   }
 
   if (relayNumber <= 32) {
@@ -489,6 +583,7 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     muxShield2.digitalWriteMS(1, relayNumber - 45, state);
 
     return;
+
   }
 
   if (relayNumber <= 80) {
@@ -498,6 +593,7 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     muxShield2.digitalWriteMS(2, relayNumber - 60, state);
 
     return;
+
   }
 
   if (relayNumber <= 96) {

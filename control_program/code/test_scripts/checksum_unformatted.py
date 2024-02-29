@@ -14,8 +14,9 @@ def add_checksum(data):
     return checksum + data
 
 
-while True:
+data = input()
 
-    data = input()
+output = "<%s>" % add_checksum(data)
 
-    print("<%s>" % add_checksum(data))
+print(output)
+

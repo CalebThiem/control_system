@@ -1,0 +1,20 @@
+Arduino Language Reference
+
+https://www.arduino.cc/reference/en/
+
+Arduino Serial Documentation
+
+https://www.arduino.cc/reference/en/language/functions/communication/serial/
+
+Serial Input Basics
+
+https://forum.arduino.cc/t/serial-input-basics-updated/382007
+
+Arduino: Sending and Receiving Multi-Digit Integers
+
+https://www.baldengineer.com/arduino-multi-digit-integers.html
+
+Arduino Cookbook: Serial
+
+https://www.oreilly.com/library/view/arduino-cookbook/9781449399368/ch04.html
+
