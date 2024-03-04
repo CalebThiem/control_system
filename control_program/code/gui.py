@@ -6,13 +6,17 @@ import tkinter as tk
 from tkinter import ttk
 from collections import deque
 
+# Set matplotlib to Tkinter mode
+
 matplotlib.use('TkAgg')
 
-# Buttons
+
 class ControlPanel: 
-    def __init__(self, parent, steps):
+    '''Displays and manages buttons on the main GUI screen'''
+    def __init__(self, parent, steps, timer_display):
         self.parent = parent
         self.steps = steps
+        self.timer_display = timer_display
         #self.sensor_display = sensor_display
 
         self.start_button = tk.Button(parent, text="Start", command=self.start_button_press)
@@ -38,11 +42,15 @@ class ControlPanel:
         self.next_button.config(state=tk.DISABLED)
         self.previous_button.config(state=tk.DISABLED)
         # Start action logic
+        self.timer_display.start_step_timer()
+        self.timer_display.start_total_timer()
         self.steps.call_current_thread()
         self.steps.start_button_pressed = True
 
     def stop_button_press(self):
         # Cancel the current step
+        self.timer_display.stop_step_timer() 
+        self.timer_display.stop_total_timer()
         self.steps.cancel()
 
         # Update button states
@@ -54,14 +62,16 @@ class ControlPanel:
 
     def next_button_press(self):
         # Load the next step
+        self.timer_display.reset_step_timer()
         self.steps.load_next_step()
 
     def previous_button_press(self):
         # Load the previous step
+        self.timer_display.reset_step_timer()
         self.steps.load_previous_step()
 
-# Arduino connection, connection popup
 class ArduinoInterface:
+    '''Arduino connection, connection popup'''
     def __init__(self, parent, arduino, address, baud_rate, on_close_callback):
         self.root = parent
         self.address = address
@@ -77,7 +87,7 @@ class ArduinoInterface:
         self.popup_text = tk.Label(self.popup, text="Connecting to Arduino...", pady=20)
         self.popup_text.pack()
 
-        # Initialize Arduino connection here (if applicable)
+        # Initialize Arduino connection
         self.connect_arduino()
 
         # Wait for connection attempt to finish and update popup
@@ -117,8 +127,8 @@ class ArduinoInterface:
         if self.on_close_callback:
             self.on_close_callback()
 
-# Steps display, tkinter is not thread-safe, so step threads update the UI through this class
 class StepsDisplay:
+    '''Steps display, tkinter is not thread-safe, so step threads update the UI through this class'''
     def __init__(self, parent, number_of_labels, pady):
         self.parent = parent
         self.parent.update() # First call preceeds mainloop start, resulting in a width of 1, if update() is not called
@@ -150,19 +160,91 @@ class StepsDisplay:
         for text_var in self.text_label_variables:
             text_var.set("")
 
-# Generates the UI, creates instances of necessary classes to make everything work
+
+class TimerDisplay:
+
+    '''Displays step time and total elapsed time on main GUI window'''
+
+    def __init__(self, root, parent_frame):
+
+        self.root = root
+
+        self.step_time = 0
+
+        self.total_time = 0
+
+        self.step_timer_tick_after_id = None
+
+        self.total_timer_tick_after_id = None
+
+        self.timer_frame = tk.Frame(parent_frame, width=100, height=200, bd=2, relief="raised")
+
+
+
+        self.step_time_display = tk.Label(self.timer_frame)
+
+        self.step_time_display.pack(anchor='w')
+
+        self.total_time_display = tk.Label(self.timer_frame)
+
+        self.total_time_display.pack(anchor='w')
+
+        self.timer_frame.place(x=5, y=5)
+
+    def step_timer_tick(self):
+
+        self.step_time += 1
+
+        self.step_time_display.configure(text=f"Step elapsed time: {self.step_time}")
+
+        self.step_timer_tick_after_id = self.root.after(1000, self.step_timer_tick)
+
+    def total_timer_tick(self):
+
+        self.total_time += 1
+
+        self.total_time_display.configure(text=f"Total elapsed time: {self.total_time}")
+
+        self.total_timer_tick_after_id = self.root.after(1000, self.total_timer_tick)
+
+    def start_step_timer(self):
+
+        self.step_timer_tick()
+
+    def start_total_timer(self):
+
+        self.total_timer_tick()
+
+    def stop_step_timer(self):
+
+        self.root.after_cancel(self.step_timer_tick_after_id)
+
+    def stop_total_timer(self):
+
+        self.root.after_cancel(self.total_timer_tick_after_id)
+
+    def reset_step_timer(self):
+
+        self.step_time = 0
+
+        self.step_time_display.configure(text=f"Step elapsed time: {self.step_time}")
+
+    def reset_total_timer(self):
+
+        self.total_time = 0
+
+
 class ApplicationWindow:
-    def __init__(self, root, layout, steps, steps_display, pin_handler, arduino, arduino_address, baud_rate):
+    '''Generates the UI, creates instances of necessary classes to make everything work'''
+    def __init__(self, root, layout, steps, steps_display, timer_display, pin_handler, arduino, arduino_address, baud_rate):
         self.root = root
         self.steps = steps
-        
         self.layout = layout
-
-        # Initialize the StepsDisplay
         self.steps_display = steps_display
+        self.timer_display = timer_display
 
         # Initialize the ControlPanel
-        self.control_panel = ControlPanel(self.layout['frame_bottom'], steps) # self.sensor_display
+        self.control_panel = ControlPanel(self.layout['frame_bottom'], steps, timer_display) # self.sensor_display
 
         self.sensor_display = SensorDisplay(self.root, arduino, self.control_panel)
 
@@ -188,6 +270,7 @@ class ApplicationWindow:
 
 
 class AlarmPopup:
+    '''Popup displayed when alarm conditions are met, alerts operator'''
     def __init__(self, parent, steps, stop_button_handler):
         self.parent = parent
         self.steps = steps
@@ -215,7 +298,7 @@ class AlarmPopup:
 
 
 class SensorDisplay:
-
+    '''Graphs displayed when Raw Sensor Data button is pressed'''
     def __init__(self, root, arduino, control_panel):
         # Window properties
         self.window_open = False
@@ -431,6 +514,7 @@ class SensorDisplay:
 
 
 class ButtonGrid:
+    '''Button matrix displayed when Manual Control button is pressed'''
     def __init__(self, parent, pin_handler, arduino, control_panel):
         self.root = parent
         self.buttons = {}

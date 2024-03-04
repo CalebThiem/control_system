@@ -134,7 +134,7 @@ class Steps:
 
                 time.sleep(0.2)
 
-    def __init__(self, steps_display, arduino):
+    def __init__(self, steps_display, timer_display, arduino):
         
         # --- Test code --- 
 
@@ -149,6 +149,8 @@ class Steps:
         self.spv_control = SpvControl(self.pin_handler, self.arduino)
         
         self.steps_display = steps_display
+
+        self.timer_display = timer_display  
 
         self.text_variable_strings = []
 
@@ -196,6 +198,8 @@ class Steps:
 
         self.current_thread(mode="display_only")
 
+        self.timer_display.reset_step_timer()
+
         self.steps_display.update_steps_display(self.text_variable_strings)
 
     def load_previous_step(self):
@@ -216,6 +220,8 @@ class Steps:
 
         self.current_thread(mode="display_only")
 
+        self.timer_display.reset_step_timer()
+
         self.steps_display.update_steps_display(self.text_variable_strings)
 
     def call_current_thread(self):
@@ -227,6 +233,8 @@ class Steps:
         self.steps_display.update_steps_display(self.text_variable_strings)
 
     def load_step(self, step, mode):
+
+        self.timer_display.reset_step_timer()
 
         self.current_thread = getattr(self, step)
 
