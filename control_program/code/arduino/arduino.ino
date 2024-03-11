@@ -222,6 +222,8 @@ void setup() {
 
   }
 
+  setMuxShieldPins("A3FD2CB7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+
     Serial.begin(460800);
 }
 
@@ -262,63 +264,25 @@ void setMuxShieldPins(char * receivedData) {
 
     unsigned int received_data_length = strlen(receivedData);
 
-    // Check if the control array is greater than the number of MuxShield2 pins, set pins to specified values
+    Serial.println(receivedData);
 
-    if (received_data_length >= 96 + 8) {
+    for (int i = 0; i < received_data_length - 8; i++) {
 
-      // Set first MuxShield2 pins
 
-      for (unsigned int i = 8; i < 48 + 8; i++) {
-
-        mux_shield_1_control(i - 7, receivedData[i] - '0');
-
-      }
-
-      // Set second MuxShield2 pins
-
-      for (unsigned int i = 48; i < 96 + 8; i++) {
-
-        mux_shield_2_control(i - 7, receivedData[i] - '0');
-
-      }
-      
-    return;
+        mux_shield_1_control(i + 1, receivedData[i + 8] - 48); // Relays are counted starting at 1
 
     }
 
-    // Check if the first MuxShield2 pins are all used, but the second's aren't, set pins to specified values
+    if (received_data_length > (48 + 8)) {
 
-    if ((received_data_length > 48 + 8) && (received_data_length < 96 + 8)) {
+        for (int i = 48; i < received_data_length - 8; i++) {
 
-      for (unsigned int i = 8; i < 48 + 8; i++) {
+            mux_shield_2_control(i + 1, receivedData[i + 8] - 48);
 
-        mux_shield_1_control(i - 7, receivedData[i] - '0');
-
-      }
-
-      for (unsigned int i = 48; i < received_data_length; i++) {
-
-        mux_shield_2_control(i - 7, receivedData[i] - '0');
-
-      }
-
-      return;
+        }
 
     }
 
-    // Check if the first MuxShield's pins aren't all used, set pins to specified values
-
-    if (received_data_length <= 48 + 8) {
-
-      for (unsigned int i = 8; i < received_data_length; i++) {
-
-        mux_shield_1_control(i - 7, receivedData[i] - '0');
-
-      }
-    
-      return;
-
-    }
 
 }
 
