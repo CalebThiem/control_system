@@ -222,8 +222,6 @@ void heartbeatTrigger() {
 
         } else {
 
-            Serial.println("Setting relays off");
-
             setAllRelaysOff();
 
         }
@@ -260,7 +258,7 @@ void setup() {
 
     ITimer1.attachInterruptInterval(HEARTBEAT_INTERVAL_MS, heartbeatTrigger);
 
-    Serial.begin(9600);
+    Serial.begin(460800);
 }
 
 
