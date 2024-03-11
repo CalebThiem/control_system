@@ -201,30 +201,32 @@ int analogReadPinsLength = sizeof(analogReadPins)/sizeof(analogReadPins[0]);
 
 void setup() {
 
-  //Set I/O 1, I/O 2, and I/O 3 as digital outputs
-  muxShield1.setMode(1,DIGITAL_OUT);  
-  muxShield1.setMode(2,DIGITAL_OUT);
-  muxShield1.setMode(3,DIGITAL_OUT);
+    //Set I/O 1, I/O 2, and I/O 3 as digital outputs
+    muxShield1.setMode(1,DIGITAL_OUT);  
+    muxShield1.setMode(2,DIGITAL_OUT);
+    muxShield1.setMode(3,DIGITAL_OUT);
 
-  muxShield2.setMode(1,DIGITAL_OUT);  
-  muxShield2.setMode(2,DIGITAL_OUT);
-  muxShield2.setMode(3,DIGITAL_OUT);
+    muxShield2.setMode(1,DIGITAL_OUT);  
+    muxShield2.setMode(2,DIGITAL_OUT);
+    muxShield2.setMode(3,DIGITAL_OUT);
+
+    setMuxShieldPins("A3FD2CB7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
   
-  for (int i = 0; i < digitalReadPinsLength; i++) {
+    for (int i = 0; i < digitalReadPinsLength; i++) {
 
-    pinMode(digitalReadPins[i], digitalReadPinMode);
+        pinMode(digitalReadPins[i], digitalReadPinMode);
 
-  }
+    }
 
-  for (int i = 0; i < analogReadPinsLength; i++) {
+    for (int i = 0; i < analogReadPinsLength; i++) {
 
-    pinMode(analogReadPins[i], analogReadPinMode);
+        pinMode(analogReadPins[i], analogReadPinMode);
 
-  }
+    }
 
-  setMuxShieldPins("A3FD2CB7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
-    Serial.begin(460800);
+
+    Serial.begin(9600);
 }
 
 
@@ -263,8 +265,6 @@ void loop() {
 void setMuxShieldPins(char * receivedData) {
 
     unsigned int received_data_length = strlen(receivedData);
-
-    Serial.println(receivedData);
 
     for (int i = 0; i < received_data_length - 8; i++) {
 
