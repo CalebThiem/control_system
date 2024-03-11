@@ -121,6 +121,14 @@ const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
 
 #include <MuxShield.h> // Library for the MuxShield2
 
+// TimerInterupt setup
+
+#define TIMER_INTERRUPT_DEBUG         0
+#define _TIMERINTERRUPT_LOGLEVEL_     0
+#define USE_TIMER_1     true
+
+#include "TimerInterrupt.h"
+
 FastCRC32 CRC32;
 
 //Initialize the first MuxShield2
@@ -171,6 +179,8 @@ MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22
 
 #define CHECKSUM_LENGTH 8
 
+#define HEARTBEAT_INTERVAL_MS 1000
+
 
 char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
 
@@ -198,6 +208,28 @@ int digitalReadPinsLength = sizeof(digitalReadPins)/sizeof(digitalReadPins[0]);
 
 int analogReadPinsLength = sizeof(analogReadPins)/sizeof(analogReadPins[0]);
 
+volatile bool heartbeat = false;
+
+bool heartbeat_enabled = false;
+
+void heartbeatTrigger() {
+
+    if (heartbeat_enabled) {
+
+        if (heartbeat == true) {
+
+            heartbeat = false;
+
+        } else {
+
+            Serial.println("Setting relays off");
+
+            setAllRelaysOff();
+
+        }
+    }
+}
+
 
 void setup() {
 
@@ -210,7 +242,7 @@ void setup() {
     muxShield2.setMode(2,DIGITAL_OUT);
     muxShield2.setMode(3,DIGITAL_OUT);
 
-    setMuxShieldPins("A3FD2CB7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+    setAllRelaysOff();
   
     for (int i = 0; i < digitalReadPinsLength; i++) {
 
@@ -224,7 +256,9 @@ void setup() {
 
     }
 
+    ITimer1.init();
 
+    ITimer1.attachInterruptInterval(HEARTBEAT_INTERVAL_MS, heartbeatTrigger);
 
     Serial.begin(9600);
 }
@@ -246,6 +280,12 @@ void loop() {
 
       sendMessage(message);
 
+    } else if (receivedData[8] == '!') {
+
+        heartbeat_enabled = true;
+
+        Serial.write("Validated\n");
+
     } else {
 
       setMuxShieldPins(receivedData);
@@ -266,24 +306,20 @@ void setMuxShieldPins(char * receivedData) {
 
     unsigned int received_data_length = strlen(receivedData);
 
-    for (int i = 0; i < received_data_length - 8; i++) {
+    for (int i = 0; i < received_data_length - CHECKSUM_LENGTH; i++) {
 
-
-        mux_shield_1_control(i + 1, receivedData[i + 8] - 48); // Relays are counted starting at 1
+        mux_shield_1_control(i + 1, receivedData[i + CHECKSUM_LENGTH] - MUX_BOARD_PIN_COUNT); // Relays are counted starting at 1
 
     }
 
     if (received_data_length > (48 + 8)) {
 
-        for (int i = 48; i < received_data_length - 8; i++) {
+        for (int i = 48; i < received_data_length - CHECKSUM_LENGTH; i++) {
 
-            mux_shield_2_control(i + 1, receivedData[i + 8] - 48);
+            mux_shield_2_control(i + 1, receivedData[i + CHECKSUM_LENGTH] - MUX_BOARD_PIN_COUNT);
 
         }
-
     }
-
-
 }
 
 
@@ -381,6 +417,8 @@ bool serialReceive() {
             // Verify the checksum received in the leading 8 bytes of the transmission
 
             if (verify_checksum(receivedData) == 2) {
+
+              heartbeat = true;
 
               return true;
 
@@ -569,6 +607,22 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     return;
 
   }
+
+}
+
+void setAllRelaysOff() {
+
+    for (int i = 1; i <= MUX_BOARD_PIN_COUNT; i++) {
+
+        mux_shield_1_control(i, 0);
+
+    }
+
+        for (int i = 48; i <= MUX_BOARD_PIN_COUNT * 2; i++) {
+
+        mux_shield_2_control(i, 0);
+
+    }
 
 }
 
