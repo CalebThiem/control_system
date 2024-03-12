@@ -8,8 +8,8 @@ from gui import TimerDisplay
 from pin_handler import PinHandler
 import time
 
-arduino_address = '/dev/ttyACM0'
-baud_rate = 9600
+arduino_address = '/dev/ttyACM1'
+baud_rate = 460800
 
 root = tk.Tk()
 root.title("test GUI")
