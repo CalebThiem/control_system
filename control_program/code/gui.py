@@ -102,6 +102,8 @@ class ArduinoInterface:
 
         if self.arduino.connection_ready:
 
+            self.heartbeat()
+
             self.popup.destroy()
 
         else:
@@ -126,6 +128,14 @@ class ArduinoInterface:
         self.disconnect_arduino()
         if self.on_close_callback:
             self.on_close_callback()
+
+    def heartbeat(self):
+
+        with self.arduino.lock:
+
+            self.arduino.serial_communicate("!")
+
+        self.root.after(750, self.heartbeat)
 
 class StepsDisplay:
     '''Steps display, tkinter is not thread-safe, so step threads update the UI through this class'''
