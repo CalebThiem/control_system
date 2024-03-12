@@ -53,7 +53,7 @@ each holding the value (0 to 1023) of an analog input pin, beginning with A6 and
 
 If the first character after the checksum was a '!', the Arduino will enable heartbeat checking,
 and respond with "Verified".
-A hardware timer will trigger a check for received transmissions every second, and if none 
+A hardware timer will trigger a check for received transmissions every five seconds, and if none 
 have been detected, all MuxShield2 pins will be set LOW.
 Additional '!' messages can be used as the heartbeat transmission, as the heartbeat functionality is
 only enabled once. To disable heartbeat checking, reset the Arduino.
@@ -185,7 +185,7 @@ MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22
 
 #define CHECKSUM_LENGTH 8
 
-#define HEARTBEAT_INTERVAL_MS 1000
+#define HEARTBEAT_INTERVAL_MS 5000
 
 
 char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
