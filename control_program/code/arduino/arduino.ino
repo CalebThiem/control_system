@@ -51,6 +51,12 @@ This message is composed of 24 "1" or "0" characters, with each consecutive char
 representing pins 30 through 53, inclusive. Following this string of 1s and 0s is a dash, followed by ten dash-seperated four digit numbers, 
 each holding the value (0 to 1023) of an analog input pin, beginning with A6 and ending with A15. 
 
+If the first character after the checksum was a '!', the Arduino will enable heartbeat checking,
+and respond with "Verified".
+A hardware timer will trigger a check for received transmissions every second, and if none 
+have been detected, all MuxShield2 pins will be set LOW.
+Additional '!' messages can be used as the heartbeat transmission, as the heartbeat functionality is
+only enabled once. To disable heartbeat checking, reset the Arduino.
 
 Input example:
 
@@ -90,7 +96,7 @@ Received: Validated\n
 
 IMPORTANT!
 
-After downloading the MuxSheild2 library, move the declerations
+After downloading a new copy of the MuxSheild2 library, move the declerations
 
 int _shiftReg1[16]={0};
 int _shiftReg2[16]={0};
