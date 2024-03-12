@@ -135,7 +135,7 @@ class ArduinoInterface:
 
             self.arduino.serial_communicate("!")
 
-        self.root.after(750, self.heartbeat)
+        self.root.after(1000, self.heartbeat)
 
 class StepsDisplay:
     '''Steps display, tkinter is not thread-safe, so step threads update the UI through this class'''
