@@ -218,7 +218,7 @@ volatile bool heartbeat = false;
 
 bool heartbeat_enabled = false;
 
-void heartbeatTrigger() {
+void heartbeatAction() {
 
     if (heartbeat_enabled) {
 
@@ -262,7 +262,7 @@ void setup() {
 
     ITimer1.init();
 
-    ITimer1.attachInterruptInterval(HEARTBEAT_INTERVAL_MS, heartbeatTrigger);
+    ITimer1.attachInterruptInterval(HEARTBEAT_INTERVAL_MS, heartbeatAction);
 
     Serial.begin(460800);
 }
