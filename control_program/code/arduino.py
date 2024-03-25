@@ -170,45 +170,47 @@ class Arduino:
 
         # Print data to be sent to Arduino, for debugging
 
-        # print(data)
+        failed_uploads = 0
 
         serial_port = self.serial_connection
 
         # Add checksum
 
         data = self.add_checksum(data)
+        
+        while True:
 
-        # Send message start character
+            # Send message start character
 
-        serial_port.write(b'<')
+            serial_port.write(b'<')
 
-        # Transmit data one character at a time
+            # Transmit data one character at a time
 
-        for char in data:
+            for char in data:
 
-            serial_port.write(char.encode())
+                serial_port.write(char.encode())
 
-        # Transmit message end character
+            # Transmit message end character
 
-        serial_port.write(b'>')
+            serial_port.write(b'>')
 
-        # Wait for the Arduino to send success/failure message
+            # Wait for the Arduino to send success/failure message
 
-        received_data = serial_port.readline().decode().strip()
+            received_data = serial_port.readline().decode().strip()
 
-        # Verify the data
+            # Verify the data
 
-        if received_data == "ChecksumFailed":
+            if received_data == "ChecksumFailed":
 
-            return "upload_failed"
+                failed_uploads += 1
 
-        if received_data != "Validated":
+            if received_data != "Validated":
 
-            return "upload_failed"
+                failed_uploads += 1
 
-        if received_data == "Validated":
+            if received_data == "Validated":
 
-            return "upload_success"
+                return failed_uploads # If no uploads failed, returns 0
 
     # Transimts message and reads Arduino input pin states
 
@@ -226,7 +228,17 @@ class Arduino:
 
     def read_inputs(self):
 
-        self.serial_communicate("?")
+        # Get sensor readings, if reception fails, retry
+        
+        while True:
+        
+            self.serial_communicate("?") 
+
+            received_data = self.receive_data()
+
+            if (received_data != "download_failed"):
+
+                break
 
         # Split the string by hyphens
         
@@ -248,8 +260,6 @@ class Arduino:
 
         upload_successes = 0
         upload_failures = 0
-        download_successes = 0
-        download_failures = 0
 
         if print_output is False:
 
@@ -269,9 +279,9 @@ class Arduino:
 
             # Transmit data, receive response transmitted by Arduino
 
-            message = self.serial_communicate(data)
+            returned_value = self.serial_communicate(data)
 
-            if message == "upload_failed":
+            if returned_value != 0:
 
                 upload_failures += 1
 
@@ -283,17 +293,9 @@ class Arduino:
 
             message = self.receive_data()
 
-            if message == "download_failed":
+            if print_output is True:
 
-                download_failures += 1
-
-            else:
-
-                download_successes += 1
-
-                if print_output is True:
-
-                    print(message)
+                print(message)
 
             time.sleep(sleep_time)
 
@@ -301,7 +303,5 @@ class Arduino:
 
         print('Upload successes:', upload_successes)
         print('Upload failures:', upload_failures)
-        print('Download successes:', download_successes)
-        print('Download failures:', download_failures)
         print('Time elapsed: %s seconds' % round((end - start), 3))
 
