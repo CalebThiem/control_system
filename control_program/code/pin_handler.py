@@ -79,4 +79,6 @@ class PinHandler:
 
         for i in range(len(self.pin_array)):
 
-            self.pin_array[i] = "0"
+            if i not in self.excluded_list:
+
+                self.pin_array[i] = "0"
