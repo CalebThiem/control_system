@@ -204,25 +204,31 @@ class Arduino:
 
                 failed_uploads += 1
 
-            if received_data != "Validated":
-
-                failed_uploads += 1
-
             if received_data == "Validated":
 
                 return failed_uploads # If no uploads failed, returns 0
+            
+            else:
+
+                failed_uploads += 1
 
     # Transimts message and reads Arduino input pin states
 
     def refresh(self, pin_state_list):
+        
+        while True:
 
-        self.serial_communicate(pin_state_list)
+            self.serial_communicate("?") 
 
-        self.serial_communicate("?")
+            received_data = self.receive_data()
 
-        input_pin_states = self.receive_data()
+            if (received_data == "download_failed"):
 
-        return input_pin_states
+                pass
+
+            else:
+
+                return received_data
 
     # Requests and reads Arduino input pin states
 
@@ -231,18 +237,24 @@ class Arduino:
         # Get sensor readings, if reception fails, retry
         
         while True:
-        
+
             self.serial_communicate("?") 
 
             received_data = self.receive_data()
 
-            if (received_data != "download_failed"):
+            print(received_data)
+
+            if (received_data == "download_failed"):
+
+                pass
+
+            else:
 
                 break
 
         # Split the string by hyphens
         
-        parts = self.receive_data().split('-')
+        parts = received_data.split('-')
 
         # Process the first part (series of '1's) into individual digits
     
