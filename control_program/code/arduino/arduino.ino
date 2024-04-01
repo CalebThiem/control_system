@@ -1,5 +1,5 @@
 /*
-Written by Caleb Thiem. 
+Written by Caleb Thiem. calebthiem@protonmail.com
 
 # Description #
 
@@ -107,11 +107,11 @@ This prevents flickering of the pin states when using more than one board.
 
 */
 
-const int digitalReadPins[24] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+const int digitalReadPins[24] = { 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53 };
 
 // Digital out (PWM capable) pins 2 through 13 are available if needed
 
-const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
+const int analogReadPins[10] = { A6, A7, A8, A9, A10, A11, A12, A13, A14, A15 };
 
 // Analog pins A0 to A5 are used for MuxShield2 communication
 
@@ -123,15 +123,15 @@ const int analogReadPins[10] = {A6, A7, A8, A9, A10, A11, A12, A13, A14, A15};
 
 #define analogReadPinMode INPUT
 
-#include <FastCRC.h> // Library for CRC hash function
+#include <FastCRC.h>  // Library for CRC hash function
 
-#include <MuxShield.h> // Library for the MuxShield2
+#include <MuxShield.h>  // Library for the MuxShield2
 
 // TimerInterupt setup
 
-#define TIMER_INTERRUPT_DEBUG         0
-#define _TIMERINTERRUPT_LOGLEVEL_     0
-#define USE_TIMER_1     true
+#define TIMER_INTERRUPT_DEBUG 0
+#define _TIMERINTERRUPT_LOGLEVEL_ 0
+#define USE_TIMER_1 true
 
 #include "TimerInterrupt.h"
 
@@ -148,10 +148,10 @@ int IO11 = A0;
 int IO12 = A1;
 int IO13 = A2;
 
-int OUTMD1 = 200; // Nonexistant pins, hardware pins tied to 5V
+int OUTMD1 = 200;  // Nonexistant pins, hardware pins tied to 5V
 int IOS11 = 200;
 int IOS12 = 200;
-int IOS13 = 200; 
+int IOS13 = 200;
 
 MuxShield muxShield1(S10, S11, S12, S13, OUTMD1, IOS11, IOS12, IOS13, IO11, IO12, IO13);
 
@@ -166,7 +166,7 @@ int IO21 = A3;
 int IO22 = A4;
 int IO23 = A5;
 
-int OUTMD2 = 200; // Nonexistant pins, hardware pins tied to 5V
+int OUTMD2 = 200;  // Nonexistant pins, hardware pins tied to 5V
 int IOS21 = 200;
 int IOS22 = 200;
 int IOS23 = 200;
@@ -187,6 +187,8 @@ MuxShield muxShield2(S20, S21, S22, S23, OUTMD2, IOS21, IOS22, IOS23, IO21, IO22
 
 #define HEARTBEAT_INTERVAL_MS 5000
 
+#define MASTER_POWER_RELAY 10 // Controls 12V power to all the other relays
+
 
 char receivedData[MAX_MESSAGE_LENGTH + 1];  // Extra space for the null terminator
 
@@ -194,15 +196,15 @@ char message[MAX_MESSAGE_LENGTH + 1];
 
 unsigned int dataIndex = 0;
 
-void setMuxShieldPins(char * receivedData);
+void setMuxShieldPins(char* receivedData);
 
-void sendMessage(char * message);
+void sendMessage(char* message);
 
 bool serialReceive(void);
 
-int verify_checksum(char * message);
+int verify_checksum(char* message);
 
-void generate_checksum(char * message);
+void generate_checksum(char* message);
 
 void toggle_outputs(int toggle);
 
@@ -210,9 +212,9 @@ void mux_shield_1_control(unsigned int relayNumber, int state);
 
 void mux_shield_2_control(unsigned int relayNumber, int state);
 
-int digitalReadPinsLength = sizeof(digitalReadPins)/sizeof(digitalReadPins[0]);
+int digitalReadPinsLength = sizeof(digitalReadPins) / sizeof(digitalReadPins[0]);
 
-int analogReadPinsLength = sizeof(analogReadPins)/sizeof(analogReadPins[0]);
+int analogReadPinsLength = sizeof(analogReadPins) / sizeof(analogReadPins[0]);
 
 volatile bool heartbeat = false;
 
@@ -220,51 +222,54 @@ bool heartbeat_enabled = false;
 
 void heartbeatAction() {
 
-    if (heartbeat_enabled) {
+  if (heartbeat_enabled) {
 
-        if (heartbeat == true) {
+    if (heartbeat == true) {
 
-            heartbeat = false;
+      heartbeat = false;
 
-        } else {
+    } else {
 
-            setAllRelaysOff();
-
-        }
+      setAllRelaysOff();
     }
+  }
 }
 
 
 void setup() {
 
-    //Set I/O 1, I/O 2, and I/O 3 as digital outputs
-    muxShield1.setMode(1,DIGITAL_OUT);  
-    muxShield1.setMode(2,DIGITAL_OUT);
-    muxShield1.setMode(3,DIGITAL_OUT);
+  pinMode(MASTER_POWER_RELAY, OUTPUT);
 
-    muxShield2.setMode(1,DIGITAL_OUT);  
-    muxShield2.setMode(2,DIGITAL_OUT);
-    muxShield2.setMode(3,DIGITAL_OUT);
+  digitalWrite(MASTER_POWER_RELAY, HIGH);
 
-    setAllRelaysOff();
-  
-    for (int i = 0; i < digitalReadPinsLength; i++) {
+  //Set I/O 1, I/O 2, and I/O 3 as digital outputs
+  muxShield1.setMode(1, DIGITAL_OUT);
+  muxShield1.setMode(2, DIGITAL_OUT);
+  muxShield1.setMode(3, DIGITAL_OUT);
 
-        pinMode(digitalReadPins[i], digitalReadPinMode);
+  muxShield2.setMode(1, DIGITAL_OUT);
+  muxShield2.setMode(2, DIGITAL_OUT);
+  muxShield2.setMode(3, DIGITAL_OUT);
 
-    }
+  setAllRelaysOff();
 
-    for (int i = 0; i < analogReadPinsLength; i++) {
+  for (int i = 0; i < digitalReadPinsLength; i++) {
 
-        pinMode(analogReadPins[i], analogReadPinMode);
+    pinMode(digitalReadPins[i], digitalReadPinMode);
+  }
 
-    }
+  for (int i = 0; i < analogReadPinsLength; i++) {
 
-    ITimer1.init();
+    pinMode(analogReadPins[i], analogReadPinMode);
+  }
 
-    ITimer1.attachInterruptInterval(HEARTBEAT_INTERVAL_MS, heartbeatAction);
+  ITimer1.init();
 
-    Serial.begin(460800);
+  ITimer1.attachInterruptInterval(HEARTBEAT_INTERVAL_MS, heartbeatAction);
+
+  Serial.begin(460800);
+
+  digitalWrite(MASTER_POWER_RELAY, LOW);
 }
 
 
@@ -274,7 +279,7 @@ void loop() {
 
   if (serialReceive()) {
 
-    // Check if input pin states have been requested 
+    // Check if input pin states have been requested
 
     if (receivedData[8] == '?') {
 
@@ -286,9 +291,9 @@ void loop() {
 
     } else if (receivedData[8] == '!') {
 
-        heartbeat_enabled = true;
+      heartbeat_enabled = true;
 
-        Serial.write("Validated\n");
+      Serial.write("Validated\n");
 
     } else {
 
@@ -297,37 +302,32 @@ void loop() {
       // Send confirmation message to sender
 
       Serial.write("Validated\n");
-
     }
-
   }
-  
-} 
+}
 
 // Set MuxShield2 pins
 
-void setMuxShieldPins(char * receivedData) {
+void setMuxShieldPins(char* receivedData) {
 
-    unsigned int received_data_length = strlen(receivedData);
+  unsigned int received_data_length = strlen(receivedData);
 
-    for (int i = 0; i < received_data_length - CHECKSUM_LENGTH; i++) {
+  for (int i = 0; i < received_data_length - CHECKSUM_LENGTH; i++) {
 
-        mux_shield_1_control(i + 1, receivedData[i + CHECKSUM_LENGTH] - MUX_BOARD_PIN_COUNT); // Relays are counted starting at 1
+    mux_shield_1_control(i + 1, receivedData[i + CHECKSUM_LENGTH] - MUX_BOARD_PIN_COUNT);  // Relays are counted starting at 1
+  }
 
+  if (received_data_length > (48 + 8)) {
+
+    for (int i = 48; i < received_data_length - CHECKSUM_LENGTH; i++) {
+
+      mux_shield_2_control(i + 1, receivedData[i + CHECKSUM_LENGTH] - MUX_BOARD_PIN_COUNT);
     }
-
-    if (received_data_length > (48 + 8)) {
-
-        for (int i = 48; i < received_data_length - CHECKSUM_LENGTH; i++) {
-
-            mux_shield_2_control(i + 1, receivedData[i + CHECKSUM_LENGTH] - MUX_BOARD_PIN_COUNT);
-
-        }
-    }
+  }
 }
 
 
-void sendMessage(char * message) {
+void sendMessage(char* message) {
 
   // Populate the first 8 bytes of the outgoing transmission array with a checksum of the rest
 
@@ -344,7 +344,6 @@ void sendMessage(char * message) {
   Serial.write('>');
 
   Serial.write('\n');
-
 }
 
 
@@ -355,7 +354,7 @@ void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPi
   // Start writing from the ninth character in the array (first eight characters will be occupied by the checksum)
 
   int index = 8;
-  
+
   // Read each digital input pin and write a 1 to the array if HIGH, and 0 if LOW
 
   for (int i = 0; i < digitalReadPinsLength; i++) {
@@ -366,7 +365,7 @@ void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPi
   }
 
   // Read each analog input pin (returns a 10-bit binary number) and write its value to the array as a 0-padded decimal number, with each number seperated by a dash
-  
+
   for (int j = 0; j < analogReadPinsLength; j++) {
 
     // Read the input pin
@@ -384,11 +383,9 @@ void readPins(int* digitalReadPins, int digitalReadPinsLength, int* analogReadPi
     sprintf(result + index, "%04d", analogPinValue);
 
     index += 4;
-
   }
-  
-  result[index] = '\0';  // Null-terminate the string
 
+  result[index] = '\0';  // Null-terminate the string
 }
 
 
@@ -398,24 +395,24 @@ bool serialReceive() {
 
   unsigned int dataIndex = 0;
 
-  while (Serial.available() > 0) { // Check if the serial buffer contains data, if not skips loop and returns false
+  while (Serial.available() > 0) {  // Check if the serial buffer contains data, if not skips loop and returns false
 
     char receivedChar = Serial.read();
 
-    if (receivedChar == START_MARKER) { // Check for transmission start
+    if (receivedChar == START_MARKER) {  // Check for transmission start
 
-    // Start of reception
+      // Start of reception
 
-      while (true) { // Reads from the serial buffer until the end character is found, or the maxumum length is reached
+      while (true) {  // Reads from the serial buffer until the end character is found, or the maxumum length is reached
 
         if (Serial.available() > 0) {
 
-          receivedChar = Serial.read(); // Read a character from the serial buffer
+          receivedChar = Serial.read();  // Read a character from the serial buffer
 
-          if (receivedChar == END_MARKER) { 
-            
+          if (receivedChar == END_MARKER) {
+
             // End of transmission:
-            
+
             receivedData[dataIndex] = '\0';  // Null-terminate the data
 
             // Verify the checksum received in the leading 8 bytes of the transmission
@@ -431,39 +428,31 @@ bool serialReceive() {
               Serial.write("ChecksumFailed\n");
 
               return false;
-              
             }
-
           }
 
           // Reception ongoing:
 
-          if (dataIndex < MAX_MESSAGE_LENGTH) { // Writes the received char to the message array
+          if (dataIndex < MAX_MESSAGE_LENGTH) {  // Writes the received char to the message array
 
             receivedData[dataIndex] = receivedChar;
 
-            dataIndex++; // Moves cursor to next char in message array
+            dataIndex++;  // Moves cursor to next char in message array
 
           }
 
           else {
 
-            receivedData[MAX_MESSAGE_LENGTH] = '\0'; // Max transmission length without end character
+            receivedData[MAX_MESSAGE_LENGTH] = '\0';  // Max transmission length without end character
 
             return false;
-
-          } 
-
+          }
         }
-
       }
-
     }
-
   }
 
   return false;
-
 }
 
 
@@ -474,7 +463,6 @@ int verify_checksum(char* message) {
   if (strlen(message) <= 8) {
 
     return 1;
-
   }
 
   int status = 0;
@@ -500,23 +488,21 @@ int verify_checksum(char* message) {
   if (received_checksum_value == calculated_checksum) {
 
     status = 2;
-
   }
 
   return status;
-
 }
 
 
 // Adds a checksum of the information in an array (the eigth byte onwards) to the beginning 8 bytes of the array
 
-void generate_checksum(char * message) {
+void generate_checksum(char* message) {
 
   // Calculate the checksum of the message
 
   unsigned long calculated_checksum = CRC32.crc32((uint8_t*)&message[8], strlen(&message[8]));
 
-  // Copy the checksum into the first 8 characters of the message array as a string 
+  // Copy the checksum into the first 8 characters of the message array as a string
   // representing a 0-padded hexadecimal number
 
   char checksumHex[9];
@@ -538,9 +524,7 @@ void generate_checksum(char * message) {
   for (int i = 0; i < 8; i++) {
 
     message[i] = checksumHex[i];
-
   }
-
 }
 
 
@@ -554,7 +538,6 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
     muxShield1.digitalWriteMS(1, relayNumber, state);
 
     return;
- 
   }
 
   if (relayNumber <= 32) {
@@ -564,7 +547,6 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
     muxShield1.digitalWriteMS(2, relayNumber - 15, state);
 
     return;
-
   }
 
   if (relayNumber <= 48) {
@@ -574,9 +556,7 @@ void mux_shield_1_control(unsigned int relayNumber, int state) {
     muxShield1.digitalWriteMS(3, relayNumber - 30, state);
 
     return;
-
   }
-
 }
 
 
@@ -589,7 +569,6 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     muxShield2.digitalWriteMS(1, relayNumber - 45, state);
 
     return;
-
   }
 
   if (relayNumber <= 80) {
@@ -599,7 +578,6 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     muxShield2.digitalWriteMS(2, relayNumber - 60, state);
 
     return;
-
   }
 
   if (relayNumber <= 96) {
@@ -609,25 +587,18 @@ void mux_shield_2_control(unsigned int relayNumber, int state) {
     muxShield2.digitalWriteMS(3, relayNumber - 75, state);
 
     return;
-
   }
-
 }
 
 void setAllRelaysOff() {
 
-    for (int i = 1; i <= MUX_BOARD_PIN_COUNT; i++) {
+  for (int i = 1; i <= MUX_BOARD_PIN_COUNT; i++) {
 
-        mux_shield_1_control(i, 0);
+    mux_shield_1_control(i, 0);
+  }
 
-    }
+  for (int i = 48; i <= MUX_BOARD_PIN_COUNT * 2; i++) {
 
-        for (int i = 48; i <= MUX_BOARD_PIN_COUNT * 2; i++) {
-
-        mux_shield_2_control(i, 0);
-
-    }
-
+    mux_shield_2_control(i, 0);
+  }
 }
-
-
