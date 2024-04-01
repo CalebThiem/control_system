@@ -46,11 +46,14 @@ class Steps:
 
         self.write_steps_display_text(text_as_list)
 
+
         if (mode == "run_logic"):
 
             self.step_running = True
 
             start_time = time.time()
+
+            self.setLeachRelays([6, 11, 16, 40, 41])
 
             while self.step_running:
 
@@ -68,7 +71,7 @@ class Steps:
 
                 # Check step progression conditions
 
-                if self.check_sensor('PVL2') == 1:
+                if self.check_sensor('PVL2') == 1 and time.time() - start_time >=5:
                     
                     self.step_running = False
 
@@ -107,6 +110,8 @@ class Steps:
             self.step_running = True
 
             start_time = time.time()
+
+            self.setLeachRelays([3, 9, 11, 14, 16, 19, 44, 45])
 
             while self.step_running:
 
@@ -249,6 +254,14 @@ class Steps:
         print("cancel called")
 
         self.step_running = False
+        
+        with self.pin_handler.lock:
+
+            self.pin_handler.resetAll()
+
+        with self.arduino.lock:
+
+            self.arduino.serial_communicate(self.pin_handler.pin_array_string())
 
         if self.spv_control.rotate_SPV:
 
@@ -286,4 +299,25 @@ class Steps:
         
         self.steps_display.update_steps_display(self.text_variable_strings)
         
+
+    def setLeachRelays(self, relay_numbers_list):
+
+        if (type(relay_numbers_list) is not list):
+
+            raise Exception("relay_numbers_list passed as argument is not a list")
+
+        if (max(relay_numbers_list) > 48):
+
+            raise Exception("Relay number greater than 48 passed to setLeachRelays. Leach relays are 1 through 48.")
+
+        # --- Relay handling code
+        with self.pin_handler.lock:
+
+            self.pin_handler.setLeachRelays(relay_numbers_list)
+
+        with self.arduino.lock:
+
+            print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
+
+        # --- End 
 
