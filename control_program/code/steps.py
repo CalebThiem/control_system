@@ -113,16 +113,20 @@ class Steps:
 
             self.setLeachRelays([3, 9, 11, 14, 16, 19, 44, 45])
 
+            self.spv_control.start_rotation()
+
+            self.spv_control.start_inflation_cycle()
+
             while self.step_running:
 
                 # Check alarm conditions
 
                 if self.check_sensor('PVFM') < 10:
-
+                    
                     self.cancel()
 
                     self.raise_alarm()
-
+                    
                     break
 
                 # Check advancement conditions
@@ -130,6 +134,8 @@ class Steps:
                 if time.time() - start_time >= 5:
 
                     self.cancel()
+
+                    self.spv_control.wait_for_rest_state()
 
                     self.load_step('step_1', 'run_logic')
 
