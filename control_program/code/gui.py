@@ -52,6 +52,12 @@ class ControlPanel:
         self.timer_display.stop_step_timer() 
         self.timer_display.stop_total_timer()
         self.steps.cancel()
+        
+        if (self.steps.spv_control.bladder_assumed_in_rest_state == False or self.steps.spv_control.basket_assumed_in_rest_state == False):
+
+            tk.messagebox.showinfo("Alert", "Waiting for process vessel to reach rest state...")
+            self.steps.spv_control.wait_for_rest_state()
+
 
         # Update button states
         self.steps.start_button_pressed = False
@@ -270,9 +276,15 @@ class ApplicationWindow:
         self.root.mainloop()
 
     def on_close(self):
-        # Define actions to perform when closing the application
-        # This can include saving state, prompting the user, etc.
+
         self.steps.step_running = False # End while loop of any running threads
+        self.steps.cancel()
+
+        if (self.steps.spv_control.bladder_assumed_in_rest_state == False or self.steps.spv_control.basket_assumed_in_rest_state == False):
+
+            tk.messagebox.showinfo("Alert", "Waiting for process vessel to reach rest state...")
+            self.steps.spv_control.wait_for_rest_state()
+
         self.arduino_interface.on_close()
         if self.sensor_display.window_open:
             self.sensor_display.on_window_close()
@@ -287,9 +299,8 @@ class AlarmPopup:
         self.stop_button_handler = stop_button_handler
 
     def show(self, var_name, index, mode): # Arguments are for tkinter callback functionality
+
         if self.steps.alarm_on:
-            # Call the stop button handler to handle any ongoing process
-            self.stop_button_handler()
 
             # Create a top-level window as a popup
             alarm_popup_window = tk.Toplevel(self.parent)
@@ -302,6 +313,10 @@ class AlarmPopup:
             # Add a close button to the popup
             close_button = ttk.Button(alarm_popup_window, text="Close", command=alarm_popup_window.destroy)
             close_button.pack(pady=5)
+
+            
+            # Call the stop button handler to handle any ongoing process
+            self.stop_button_handler()
 
             # Reset the alarm flag
             self.steps.alarm_on.set(False)
