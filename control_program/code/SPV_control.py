@@ -55,18 +55,21 @@ class SpvControl:
         self.pin_handler = pin_handler_instance
         self.arduino = arduino_instance
 
+        self.basket_assumed_in_rest_state = True
+        self.bladder_assumed_in_rest_state = True
+
         # Rotation time in seconds
 
-        self.rotation_time = 5
-        self.pause_time = 2
+        self.rotation_time = 2
+        self.pause_time = 1
 
         # Inflation times in seconds
 
-        self.high_pressure_inflation = 10
-        self.medium_pressure_inflation = 10
-        self.low_pressure_inflation = 10
-        self.venting_deflation = 10
-        self.vacuum_deflation = 10
+        self.high_pressure_inflation = 2
+        self.medium_pressure_inflation = 2
+        self.low_pressure_inflation = 2
+        self.venting_deflation = 2
+        self.vacuum_deflation = 2
 
         # Set relay control system  numbers
 
@@ -164,9 +167,13 @@ class SpvControl:
 
             self.arduino.serial_communicate(self.pin_handler.pin_array_string())
 
+        self.basket_assumed_in_rest_state = True
+
     def start_rotation(self):
 
         self.rotate_SPV = True
+
+        self.basket_assumed_in_rest_state = False
         
         with self.pin_handler.lock:
 
@@ -227,9 +234,13 @@ class SpvControl:
 
         self.set_bladder_state(None)
 
+        self.bladder_assumed_in_rest_state = True
+
     def start_inflation_cycle(self):
 
         self.inflation_cycle_running = True
+
+        self.bladder_assumed_in_rest_state = False
 
         with self.pin_handler.lock:
 
@@ -246,4 +257,14 @@ class SpvControl:
 
             self.pin_handler.undoExcludePins(self.bladder_relays)
 
-    
+    def wait_for_rest_state(self):
+
+        while (True):
+            
+            if (self.basket_assumed_in_rest_state and self.bladder_assumed_in_rest_state):
+
+                break
+
+            else:
+
+                time.sleep(1)
