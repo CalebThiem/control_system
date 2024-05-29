@@ -90,9 +90,13 @@ class Arduino:
 
         if self.connection_ready:
 
-            self.serial_connection.close()
+            try:
 
-            self.connection_ready = False
+                self.serial_connection.close()
+
+            finally:
+
+                self.connection_ready = False
 
         else:
 
@@ -140,7 +144,15 @@ class Arduino:
 
     def receive_data(self):
 
-        received_data = self.serial_connection.readline().decode().strip()
+        try:
+            
+            received_data = self.serial_connection.readline().decode().strip()
+
+        except serial.serialutil.SerialException:
+            
+            received_data = False
+
+            print("connection error")
 
         if received_data:
 
@@ -181,22 +193,54 @@ class Arduino:
         while True:
 
             # Send message start character
+            
+            try:
+                
+                serial_port.write(b'<')
 
-            serial_port.write(b'<')
+            except serial.serialutil.SerialException:
+                
+                print("connection error")
 
+                break
+        
             # Transmit data one character at a time
 
             for char in data:
+                
+                try:
 
-                serial_port.write(char.encode())
+                    serial_port.write(char.encode())
 
+                except serial.serialutil.SerialException:
+                    
+                    print("connection error")
+
+                    break
+            
             # Transmit message end character
+            
+            try:
 
-            serial_port.write(b'>')
+                serial_port.write(b'>')
+
+            except serial.serialutil.SerialException:
+                
+                print("connection error")
+
+                break
 
             # Wait for the Arduino to send success/failure message
+            
+            try:
 
-            received_data = serial_port.readline().decode().strip()
+                received_data = serial_port.readline().decode().strip()
+
+            except serial.serialutil.SerialException:
+                
+                print("connection error")
+
+                break
 
             # Verify the data
 
