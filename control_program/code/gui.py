@@ -123,16 +123,18 @@ class ArduinoInterface:
 
     def disconnect_arduino(self):
         # Method to handle Arduino disconnection
-        # Example: self.arduino.disconnect()
+
         with self.arduino.lock:
 
             self.arduino.disconnect()
 
     def on_close(self):
         # Method to handle closing events
-        # Perform necessary cleanup
+
         self.disconnect_arduino()
+
         if self.on_close_callback:
+
             self.on_close_callback()
 
     def heartbeat(self):
@@ -278,16 +280,13 @@ class ApplicationWindow:
     def on_close(self):
 
         self.steps.step_running = False # End while loop of any running threads
-        self.steps.cancel()
-
-        if (self.steps.spv_control.bladder_assumed_in_rest_state == False or self.steps.spv_control.basket_assumed_in_rest_state == False):
-
-            tk.messagebox.showinfo("Alert", "Waiting for process vessel to reach rest state...")
-            self.steps.spv_control.wait_for_rest_state()
 
         self.arduino_interface.on_close()
+
         if self.sensor_display.window_open:
+
             self.sensor_display.on_window_close()
+
         self.root.destroy()
 
 
@@ -609,6 +608,7 @@ class ButtonGrid:
 
             print("Resetting all pins...", self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
 
+            print("serial connection failure")
 
         self.control_panel.manual_control_popup_button.config(state=tk.NORMAL)
 
