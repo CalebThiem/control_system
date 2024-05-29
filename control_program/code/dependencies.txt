@@ -1,5 +1,0 @@
-apt install python3-tk
-
-pip install pyserial
-
-pip install matplotlib
