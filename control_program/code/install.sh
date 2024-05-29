@@ -2,8 +2,8 @@ sudo apt install python3-tk
 
 sudo apt install python3-pip
 
-pip install pyserial
+sudo apt install python3-pyserial
 
-pip install matplotlib
+sudo apt install python3-matplotlib
 
 sudo usermod -a -G dialout $USER
