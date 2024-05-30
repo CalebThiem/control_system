@@ -73,14 +73,14 @@ class SpvControl:
 
         # Set relay control system  numbers
 
-        self.motor_clockwise = [1]
-        self.motor_anticlockwise = [2]
+        self.motor_clockwise = [17]
+        self.motor_anticlockwise = [17, 18]
 
-        self.high_pressure = [3]
-        self.medium_pressure = [4]
-        self.low_pressure = [5]
-        self.vent = [6]
-        self.vacuum_pump = [7]
+        self.high_pressure = [28]
+        self.medium_pressure = [27]
+        self.low_pressure = [25]
+        self.vent = [26]
+        self.vacuum_pump = [21, 22]
         self.none = None
         
         self.motor_relays = [
