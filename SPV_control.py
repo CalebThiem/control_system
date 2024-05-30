@@ -35,6 +35,10 @@ Methods:
 
         Completes the current inflation run, then disables the cycle.
 
+    start_evacuation_sequence()
+
+        Incrementaly inflates bladder to max pressure, then vents and vacuums
+
     set_bladder_state(state_to_engage)
 
         Engages a bladder inflation/deflation state. Available states:
@@ -45,6 +49,13 @@ Methods:
             vent
             vacuum_pump
             none
+
+Variables:
+        
+        bool basket_assumed_in_rest_state
+        bool bladder_assumed_in_rest_state
+        bool inflation_cycle_running
+        bool evacuation_sequence_running
 '''
 
 
