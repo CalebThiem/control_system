@@ -112,6 +112,7 @@ class SpvControl:
         self.rotate_SPV = False
 
         self.inflation_cycle_running = False
+        self.evacuation_sequence_running = False
 
     def rotate_clockwise(self):
 
@@ -120,6 +121,8 @@ class SpvControl:
         with self.pin_handler.lock:
 
             self.pin_handler.setRelaysOff(self.motor_anticlockwise)
+    
+            time.sleep(self.pause_time)
 
             self.pin_handler.setRelaysOn(self.motor_clockwise)
 
@@ -136,6 +139,8 @@ class SpvControl:
         with self.pin_handler.lock:
 
             self.pin_handler.setRelaysOff(self.motor_clockwise)
+
+            time.sleep(self.pause_time)
 
             self.pin_handler.setRelaysOn(self.motor_anticlockwise)
 
@@ -212,14 +217,6 @@ class SpvControl:
 
         while self.inflation_cycle_running is True:
 
-            self.set_bladder_state(self.high_pressure)
-
-            time.sleep(self.high_pressure_inflation)
-
-            self.set_bladder_state(self.medium_pressure)
-
-            time.sleep(self.medium_pressure_inflation)
-
             self.set_bladder_state(self.low_pressure)
 
             time.sleep(self.low_pressure_inflation)
@@ -235,6 +232,38 @@ class SpvControl:
         self.set_bladder_state(None)
 
         self.bladder_assumed_in_rest_state = True
+
+    def evacuation_sequence(self):
+
+        self.set_bladder_state(self.low_pressure)
+
+        time.sleep(self.low_pressure_inflation)
+
+        self.set_bladder_state(self.medium_pressure)
+
+        time.sleep(self.medium_pressure_inflation)
+
+        self.set_bladder_state(self.high_pressure)
+
+        time.sleep(self.high_pressure_inflation)
+
+        self.set_bladder_state(self.vent)
+
+        time.sleep(self.venting_deflation)
+
+        self.set_bladder_state(self.vacuum_pump)
+
+        time.sleep(self.vacuum_deflation)
+
+        self.set_bladder_state(None)
+
+        self.bladder_assumed_in_rest_state = True
+
+        self.evacuation_cycle_running = False
+
+        with self.pin_handler.lock:
+
+            self.pin_handler.undoExcludePins(self.bladder_relays)
 
     def start_inflation_cycle(self):
 
@@ -256,6 +285,17 @@ class SpvControl:
         with self.pin_handler.lock:
 
             self.pin_handler.undoExcludePins(self.bladder_relays)
+
+    def start_evacuation_sequence(self):
+
+        self.evacuation_sequence_running = True
+
+        with self.pin_handler.lock:
+
+            self.pin_handler.excludePins(self.bladder_relays)
+
+        evacuation_sequence_thread = threading.Thread(target=self.evacuation_sequence)
+        evacuation_sequence_thread.start()
 
     def wait_for_rest_state(self):
 
