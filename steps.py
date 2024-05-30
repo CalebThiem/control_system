@@ -277,6 +277,10 @@ class Steps:
 
             self.spv_control.inflation_cycle_running = False
 
+        if self.spv_control.evacuation_sequence_running:
+
+            self.spv_control.evacuation_sequence_running = False
+
         if (type(self.queued_thread) == threading.Timer):
 
             self.queued_thread.cancel()
