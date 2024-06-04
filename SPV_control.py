@@ -84,7 +84,7 @@ class SpvControl:
 
         # Set relay control system  numbers
 
-        self.motor_clockwise = [17]
+        self.motor_clockwise = [18]
         self.motor_anticlockwise = [17, 18]
 
         self.high_pressure = [28]
@@ -127,13 +127,17 @@ class SpvControl:
 
     def rotate_clockwise(self):
 
-        time.sleep(self.pause_time)
-
         with self.pin_handler.lock:
 
             self.pin_handler.setRelaysOff(self.motor_anticlockwise)
-    
-            time.sleep(self.pause_time)
+
+        with self.arduino.lock:
+
+            self.arduino.serial_communicate(self.pin_handler.pin_array_string())
+
+        time.sleep(self.pause_time)
+
+        with self.pin_handler.lock:
 
             self.pin_handler.setRelaysOn(self.motor_clockwise)
 
@@ -145,13 +149,17 @@ class SpvControl:
 
     def rotate_anticlockwise(self):
 
+        with self.pin_handler.lock:
+
+            self.pin_handler.setRelaysOff(self.motor_anticlockwise)
+
+        with self.arduino.lock:
+
+            self.arduino.serial_communicate(self.pin_handler.pin_array_string())
+
         time.sleep(self.pause_time)
 
         with self.pin_handler.lock:
-
-            self.pin_handler.setRelaysOff(self.motor_clockwise)
-
-            time.sleep(self.pause_time)
 
             self.pin_handler.setRelaysOn(self.motor_anticlockwise)
 
@@ -174,8 +182,6 @@ class SpvControl:
             time.sleep(self.rotation_time)
 
         with self.pin_handler.lock:
-
-            self.pin_handler.setRelaysOff(self.motor_clockwise)
 
             self.pin_handler.setRelaysOff(self.motor_anticlockwise)
 
