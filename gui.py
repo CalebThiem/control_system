@@ -5,6 +5,8 @@ from tkinter import font as tkFont
 import tkinter as tk
 from tkinter import ttk
 from collections import deque
+import os.path
+import time
 
 # Set matplotlib to Tkinter mode
 
@@ -86,19 +88,77 @@ class ArduinoInterface:
         self.on_close_callback = on_close_callback
              
         # Show connection popup
-
+        
         self.popup = tk.Toplevel(self.root)
         self.popup.geometry('600x50')
         self.popup.title("Connection Status")
         self.popup_text = tk.Label(self.popup, text="Connecting to Arduino...", pady=20)
         self.popup_text.pack()
-
-        # Initialize Arduino connection
+        
         self.connect_arduino()
 
-        # Wait for connection attempt to finish and update popup
+        self.root.after(2000, self.finalise_connection)
+    
+    def finalise_connection(self):
 
-        self.root.after(2000, self.update_connection_popup)
+        #self.check_connection()
+
+        if self.arduino.connection_ready:
+
+            print("connected")
+
+            self.popup.destroy()
+
+            self.heartbeat()
+
+        else:
+
+            self.connect_arduino()
+
+            self.root.after(2000, self.finalise_connection)
+            
+            return
+
+        self.check_connection()
+
+
+    def check_connection(self):
+
+        if os.path.exists(self.address):
+
+            pass
+
+        else:
+
+            print("disconnected")
+
+            self.popup = tk.Toplevel(self.root)
+            self.popup.geometry('600x50')
+            self.popup.title("Connection Status")
+            self.popup_text = tk.Label(self.popup, text="No connection, retrying...", pady=20)
+            self.popup_text.pack()
+
+            while not os.path.exists(self.address):
+
+                for possibility in range(9):
+
+                    port = f"/dev/ttyACM{possibility}".format(possibility)
+
+                    if os.path.exists(port):
+
+                        self.address = port
+
+                        self.connect_arduino()
+
+                        break
+
+            print("connected")
+
+            self.popup.destroy()
+
+            self.heartbeat()
+
+        self.root.after(2000, self.check_connection)
     
     def update_connection_popup(self):
 
@@ -108,18 +168,34 @@ class ArduinoInterface:
 
         if self.arduino.connection_ready:
 
-            self.heartbeat()
-
             self.popup.destroy()
 
         else:
 
-            self.popup_text.config(text="Arduino connection failed. Check connection and restart program.")
+            self.popup_text.config(text="Arduino connection failed. Check connection.")
 
     def connect_arduino(self):
         # Method to handle Arduino connection
-        # Example: self.arduino = Arduino(self.address, self.baud_rate)
-        self.arduino.connect(self.address, self.baud_rate)
+
+        if (os.path.exists(self.address)):
+
+            print("connecting to {port}".format(port=self.address))
+    
+            self.arduino.connect(self.address, self.baud_rate)
+
+        else:
+
+            for possibility in range(9):
+
+                port = f"/dev/ttyACM{possibility}".format(possibility)
+
+                if os.path.exists(port):
+
+                    self.address = port
+
+                    break
+
+            self.arduino.connect(self.address, self.baud_rate)
 
     def disconnect_arduino(self):
         # Method to handle Arduino disconnection
@@ -138,12 +214,14 @@ class ArduinoInterface:
             self.on_close_callback()
 
     def heartbeat(self):
+        
+        if self.arduino.connection_ready == True:
 
-        with self.arduino.lock:
+            with self.arduino.lock:
 
-            self.arduino.serial_communicate("!")
+                self.arduino.serial_communicate("!")
 
-        self.root.after(1000, self.heartbeat)
+            self.root.after(1000, self.heartbeat)
 
 class StepsDisplay:
     '''Steps display, tkinter is not thread-safe, so step threads update the UI through this class'''

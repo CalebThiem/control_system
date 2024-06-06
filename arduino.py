@@ -152,7 +152,7 @@ class Arduino:
             
             received_data = False
 
-            print("connection error")
+            print("Arduino.receive_data: connection error")
 
         if received_data:
 
@@ -200,9 +200,11 @@ class Arduino:
 
             except serial.serialutil.SerialException:
                 
-                print("connection error")
+                print("Arduino.serial_communicate: connection error")
 
-                break
+                self.connection_ready = False
+
+                return 1
         
             # Transmit data one character at a time
 
@@ -213,10 +215,12 @@ class Arduino:
                     serial_port.write(char.encode())
 
                 except serial.serialutil.SerialException:
-                    
-                    print("connection error")
 
-                    break
+                    self.connection_ready = False
+                    
+                    print("Arduino.serial_communicate: connection error")
+
+                    return 1
             
             # Transmit message end character
             
@@ -225,10 +229,12 @@ class Arduino:
                 serial_port.write(b'>')
 
             except serial.serialutil.SerialException:
-                
-                print("connection error")
 
-                break
+                self.connection_ready = False
+                
+                print("Arduino.serial_communicate: connection error")
+
+                return 1
 
             # Wait for the Arduino to send success/failure message
             
@@ -238,9 +244,9 @@ class Arduino:
 
             except serial.serialutil.SerialException:
                 
-                print("connection error")
+                print("Arduino.serial_communicate.received_data: connection error")
 
-                break
+                return 1
 
             # Verify the data
 

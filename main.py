@@ -9,8 +9,22 @@ from gui import AlarmPopup
 from gui import TimerDisplay
 from pin_handler import PinHandler
 import time
+import os.path
 
+# Default address
 arduino_address = '/dev/ttyACM0'
+
+for possibility in range(9):
+
+    port = f"/dev/ttyACM{possibility}".format(possibility)
+
+    if os.path.exists(port):
+
+        arduino_address = port
+
+        break
+
+       
 baud_rate = 460800
 
 root = tk.Tk()
