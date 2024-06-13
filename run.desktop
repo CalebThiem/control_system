@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Control Sytem
+Exec=python3 /home/user/control_system/main.py
+Icon=python3
