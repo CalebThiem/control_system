@@ -132,31 +132,7 @@ class ArduinoInterface:
 
             print("disconnected")
 
-            self.popup = tk.Toplevel(self.root)
-            self.popup.geometry('600x50')
-            self.popup.title("Connection Status")
-            self.popup_text = tk.Label(self.popup, text="No connection, retrying...", pady=20)
-            self.popup_text.pack()
-
-            while not os.path.exists(self.address):
-
-                for possibility in range(9):
-
-                    port = f"/dev/ttyACM{possibility}".format(possibility)
-
-                    if os.path.exists(port):
-
-                        self.address = port
-
-                        self.connect_arduino()
-
-                        break
-
-            print("connected")
-
-            self.popup.destroy()
-
-            self.heartbeat()
+            tk.messagebox.showwarning(title="Connection error", message="USB connection lost. Check connection and restart program")
 
         self.root.after(2000, self.check_connection)
     
@@ -685,8 +661,6 @@ class ButtonGrid:
         with self.arduino.lock:
 
             print("Resetting all pins...", self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
-
-            print("serial connection failure")
 
         self.control_panel.manual_control_popup_button.config(state=tk.NORMAL)
 
