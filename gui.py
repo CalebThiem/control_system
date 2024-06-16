@@ -86,7 +86,7 @@ class ArduinoInterface:
         self.baud_rate = baud_rate
         self.arduino = arduino
         self.on_close_callback = on_close_callback
-             
+        self.check_connection_method_sheduled = False
         # Show connection popup
         
         self.popup = tk.Toplevel(self.root)
@@ -119,10 +119,16 @@ class ArduinoInterface:
             
             return
 
-        self.check_connection()
+        if not self.check_connection_method_sheduled:
+
+            self.check_connection()
 
 
     def check_connection(self):
+
+        if not self.check_connection_method_sheduled:
+
+            self.check_connection_method_sheduled = True
 
         if os.path.exists(self.address):
 
@@ -132,7 +138,11 @@ class ArduinoInterface:
 
             print("disconnected")
 
-            tk.messagebox.showwarning(title="Connection error", message="USB connection lost. Check connection and restart program")
+            self.arduino.connection_ready = False
+
+            self.connect_arduino()
+
+            #tk.messagebox.showwarning(title="Connection error", message="USB connection lost. Check connection and restart program")
 
         self.root.after(2000, self.check_connection)
     
@@ -155,7 +165,7 @@ class ArduinoInterface:
 
         if (os.path.exists(self.address)):
 
-            print("connecting to {port}".format(port=self.address))
+            print("160 connecting to {port}".format(port=self.address))
     
             self.arduino.connect(self.address, self.baud_rate)
 
@@ -171,7 +181,15 @@ class ArduinoInterface:
 
                     break
 
-            self.arduino.connect(self.address, self.baud_rate)
+            if (os.path.exists(self.address)):
+
+                print("176 connecting to {port}".format(port=self.address))
+                
+                self.arduino.connect(self.address, self.baud_rate)
+
+                self.arduino.connection_ready = True
+
+                self.root.after(2000, self.finalise_connection)
 
     def disconnect_arduino(self):
         # Method to handle Arduino disconnection
@@ -190,12 +208,16 @@ class ArduinoInterface:
             self.on_close_callback()
 
     def heartbeat(self):
+
+        #print(self.arduino.connection_ready)
         
         if self.arduino.connection_ready == True:
 
             with self.arduino.lock:
 
                 self.arduino.serial_communicate("!")
+
+                #print("Heartbeat sent on connection: \n{connection}".format(connection=self.arduino.serial_connection))
 
             self.root.after(1000, self.heartbeat)
 
