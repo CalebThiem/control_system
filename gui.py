@@ -7,6 +7,7 @@ from tkinter import ttk
 from collections import deque
 import os.path
 import time
+import serial
 
 # Set matplotlib to Tkinter mode
 
@@ -80,12 +81,13 @@ class ControlPanel:
 
 class ArduinoInterface:
     '''Arduino connection, connection popup'''
-    def __init__(self, parent, arduino, address, baud_rate, on_close_callback, pin_handler):
+    def __init__(self, parent, arduino, address, baud_rate, on_close_callback, pin_handler, control_panel):
         self.root = parent
         self.address = address
         self.baud_rate = baud_rate
         self.arduino = arduino
         self.pin_handler = pin_handler
+        self.control_panel = control_panel
         self.on_close_callback = on_close_callback
         self.check_connection_method_sheduled = False
         # Show connection popup
@@ -129,6 +131,24 @@ class ArduinoInterface:
         if not self.check_connection_method_sheduled:
 
             self.check_connection()
+    
+    def handle_disconnection(self):
+
+        print("disconnected")
+
+        self.arduino.connection_ready = False
+        
+        try:
+
+            self.control_panel.stop_button_press()
+
+        finally:
+
+            if tk.messagebox.askretrycancel(title="Connection Error", message="Serial connection to Arduino lost. Reconnect USB cable") == False:
+
+                self.root.destroy()
+
+        self.connect_arduino()
 
 
     def check_connection(self):
@@ -143,17 +163,7 @@ class ArduinoInterface:
 
         else:
 
-            print("disconnected")
-
-            if tk.messagebox.askretrycancel(title="Connection Error", message="Serial connection to Arduino lost. Check USB cable") == False:
-
-                self.root.destroy()
-
-            self.arduino.connection_ready = False
-
-            self.connect_arduino()
-
-            #tk.messagebox.showwarning(title="Connection error", message="USB connection lost. Check connection and restart program")
+            self.handle_disconnection()
 
         self.root.after(250, self.check_connection)
     
@@ -356,7 +366,7 @@ class ApplicationWindow:
         self.button_grid = ButtonGrid(self.root, pin_handler, arduino, self.control_panel)
 
         # Initialize the ArduinoInterface
-        self.arduino_interface = ArduinoInterface(self.root, arduino, arduino_address, baud_rate, None, pin_handler)
+        self.arduino_interface = ArduinoInterface(self.root, arduino, arduino_address, baud_rate, None, pin_handler, self.control_panel)
 
         # Additional setup can be done here (e.g., menu bars, status bars, additional frames/panels)
 
