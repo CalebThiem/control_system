@@ -80,11 +80,12 @@ class ControlPanel:
 
 class ArduinoInterface:
     '''Arduino connection, connection popup'''
-    def __init__(self, parent, arduino, address, baud_rate, on_close_callback):
+    def __init__(self, parent, arduino, address, baud_rate, on_close_callback, pin_handler):
         self.root = parent
         self.address = address
         self.baud_rate = baud_rate
         self.arduino = arduino
+        self.pin_handler = pin_handler
         self.on_close_callback = on_close_callback
         self.check_connection_method_sheduled = False
         # Show connection popup
@@ -101,7 +102,7 @@ class ArduinoInterface:
     
     def finalise_connection(self):
 
-        #self.check_connection()
+        # self.check_connection()
 
         if self.arduino.connection_ready:
 
@@ -110,6 +111,12 @@ class ArduinoInterface:
             self.popup.destroy()
 
             self.heartbeat()
+
+            print("sending pin states... ", end="")
+
+            with self.arduino.lock:
+
+                print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
 
         else:
 
@@ -138,13 +145,17 @@ class ArduinoInterface:
 
             print("disconnected")
 
+            if tk.messagebox.askretrycancel(title="Connection Error", message="Serial connection to Arduino lost. Check USB cable") == False:
+
+                self.root.destroy()
+
             self.arduino.connection_ready = False
 
             self.connect_arduino()
 
             #tk.messagebox.showwarning(title="Connection error", message="USB connection lost. Check connection and restart program")
 
-        self.root.after(2000, self.check_connection)
+        self.root.after(250, self.check_connection)
     
     def update_connection_popup(self):
 
@@ -165,7 +176,7 @@ class ArduinoInterface:
 
         if (os.path.exists(self.address)):
 
-            print("160 connecting to {port}".format(port=self.address))
+            print("connecting to {port}".format(port=self.address))
     
             self.arduino.connect(self.address, self.baud_rate)
 
@@ -183,7 +194,7 @@ class ArduinoInterface:
 
             if (os.path.exists(self.address)):
 
-                print("176 connecting to {port}".format(port=self.address))
+                print("connecting to {port}".format(port=self.address))
                 
                 self.arduino.connect(self.address, self.baud_rate)
 
@@ -345,7 +356,7 @@ class ApplicationWindow:
         self.button_grid = ButtonGrid(self.root, pin_handler, arduino, self.control_panel)
 
         # Initialize the ArduinoInterface
-        self.arduino_interface = ArduinoInterface(self.root, arduino, arduino_address, baud_rate, None)
+        self.arduino_interface = ArduinoInterface(self.root, arduino, arduino_address, baud_rate, None, pin_handler)
 
         # Additional setup can be done here (e.g., menu bars, status bars, additional frames/panels)
 
