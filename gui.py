@@ -332,11 +332,15 @@ class TimerDisplay:
 
     def stop_step_timer(self):
 
-        self.root.after_cancel(self.step_timer_tick_after_id)
+        if self.step_timer_tick_after_id:
+    
+            self.root.after_cancel(self.step_timer_tick_after_id)
 
     def stop_total_timer(self):
 
-        self.root.after_cancel(self.total_timer_tick_after_id)
+        if self.total_timer_tick_after_id:
+
+            self.root.after_cancel(self.total_timer_tick_after_id)
 
     def reset_step_timer(self):
 
