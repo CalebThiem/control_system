@@ -653,7 +653,7 @@ class ButtonGrid:
 
     def create_window(self):
         self.popup = tk.Toplevel(self.root)
-
+        self.popup.wm_attributes("-topmost", True)
         self.control_panel.manual_control_popup_button.config(state=tk.DISABLED)
         self.popup.protocol("WM_DELETE_WINDOW", self.on_window_close)
         self.popup.title("Manual Control")
