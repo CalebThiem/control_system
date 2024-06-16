@@ -645,44 +645,50 @@ class ButtonGrid:
             self.buttons[i] = button
 
     def button_press(self, number):
-        button = self.buttons[number]
-        print(f"Button {number} pressed")
 
-        # Toggle red outline
-        if button.cget("highlightbackground") == self.defaultbg:
-            button.config(highlightbackground="red")
+        if self.arduino.connection_ready:
 
-            # --- Relay handling code
-            with self.pin_handler.lock:
+            button = self.buttons[number]
 
-                self.pin_handler.setRelaysOn([number])
+            print(f"Button {number} pressed")
 
-            with self.arduino.lock:
+            # Toggle red outline
+            if button.cget("highlightbackground") == self.defaultbg:
+                button.config(highlightbackground="red")
 
-                print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
+                # --- Relay handling code
+                with self.pin_handler.lock:
 
-            # --- End 
+                    self.pin_handler.setRelaysOn([number])
 
-        else:
-            button.config(highlightbackground=self.defaultbg)
-            
-            with self.pin_handler.lock:
+                with self.arduino.lock:
 
-                self.pin_handler.setRelaysOff([number])
-            
-            with self.arduino.lock:
+                    print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
 
-                print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
+                # --- End 
+
+            else:
+                button.config(highlightbackground=self.defaultbg)
+                
+                with self.pin_handler.lock:
+
+                    self.pin_handler.setRelaysOff([number])
+                
+                with self.arduino.lock:
+
+                    print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
 
     def on_window_close(self):
 
-        with self.pin_handler.lock:
-            
-            self.pin_handler.resetAll()
+        if self.arduino.connection_ready:
 
-        with self.arduino.lock:
+            with self.pin_handler.lock:
+                
+                self.pin_handler.resetAll()
 
-            print("Resetting all pins...", self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
+            with self.arduino.lock:
+
+                print("Resetting all pins...", self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
 
         self.control_panel.manual_control_popup_button.config(state=tk.NORMAL)
 
