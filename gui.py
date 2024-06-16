@@ -644,6 +644,10 @@ class ButtonGrid:
             self.popup.grid_columnconfigure((i-1)%12, weight=1)
             self.buttons[i] = button
 
+        print(self.pin_handler.pin_array_string())
+
+        self.reflect_relay_states()
+
     def button_press(self, number):
 
         if self.arduino.connection_ready:
@@ -678,7 +682,26 @@ class ButtonGrid:
 
                     print(self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
 
+    def reflect_relay_states(self):
+
+        for relay_number in range(1, 97):
+            
+            button = self.buttons[relay_number]
+
+            if self.pin_handler.pin_array[relay_number - 1] == "1":
+
+                if button.cget("highlightbackground") == self.defaultbg:
+
+                    print("showing button {button_number} as active".format(button_number=relay_number))
+
+                    button.config(highlightbackground="red")
+
+        self.popup.after(250, self.reflect_relay_states)
+
+                
     def on_window_close(self):
+
+        '''
 
         if self.arduino.connection_ready:
 
@@ -689,6 +712,8 @@ class ButtonGrid:
             with self.arduino.lock:
 
                 print("Resetting all pins...", self.arduino.serial_communicate(self.pin_handler.pin_array_string()))
+        
+        '''
 
         self.control_panel.manual_control_popup_button.config(state=tk.NORMAL)
 
