@@ -707,6 +707,10 @@ class ButtonGrid:
 
                     button.config(highlightbackground="red")
 
+            else:
+
+                button.config(highlightbackground=self.defaultbg)
+
         self.popup.after(250, self.reflect_relay_states)
 
                 

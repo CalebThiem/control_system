@@ -64,7 +64,7 @@ steps_display = StepsDisplay(layout['frame_left'], number_of_labels=14, pady=10)
 
 timer_display = TimerDisplay(root, layout['frame_right'])
 
-steps = Steps(steps_display, timer_display, arduino)
+steps = Steps(steps_display, timer_display, arduino, pin_handler)
 
 application_window = ApplicationWindow(root, layout, steps, steps_display, timer_display, pin_handler, arduino, arduino_address, baud_rate)
 
