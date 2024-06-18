@@ -467,6 +467,7 @@ class SensorDisplay:
         self.popup.title("Raw Sensor Data")
         self.popup.geometry("800x500")
         self.setup_popup_contents()
+        self.popup.wm_attributes("-topmost", True)
         self.popup.protocol("WM_DELETE_WINDOW", self.on_window_close)
         self.start_displaying()
 
