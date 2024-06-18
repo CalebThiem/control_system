@@ -103,7 +103,7 @@ class SpvControl:
             
             ]
 
-        self.motor_relays = list(itertools.chain(*self.motor_relays))
+        self.motor_relays = set(itertools.chain(*self.motor_relays))
 
         self.bladder_relays = [
 
@@ -115,7 +115,7 @@ class SpvControl:
             
             ]
 
-        self.bladder_relays = list(itertools.chain(*self.bladder_relays))
+        self.bladder_relays = set(itertools.chain(*self.bladder_relays))
 
         # Tracking for number of rotations
 
@@ -132,6 +132,7 @@ class SpvControl:
         with self.pin_handler.lock:
 
             self.pin_handler.setRelaysOff(self.motor_anticlockwise)
+            self.pin_handler.setRelaysOff(self.motor_clockwise)
 
         with self.arduino.lock:
 
@@ -154,6 +155,7 @@ class SpvControl:
         with self.pin_handler.lock:
 
             self.pin_handler.setRelaysOff(self.motor_anticlockwise)
+            self.pin_handler.setRelaysOff(self.motor_clockwise)
 
         with self.arduino.lock:
 
@@ -186,6 +188,7 @@ class SpvControl:
         with self.pin_handler.lock:
 
             self.pin_handler.setRelaysOff(self.motor_anticlockwise)
+            self.pin_handler.setRelaysOff(self.motor_clockwise)
 
         with self.arduino.lock:
 
@@ -201,7 +204,7 @@ class SpvControl:
         
         with self.pin_handler.lock:
 
-            self.pin_handler.excludePins(self.motor_relays)
+            self.pin_handler.excludePins([17, 18])
 
         rotation = threading.Thread(target=self.rotation_manager)
         rotation.start()

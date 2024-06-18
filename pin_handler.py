@@ -21,17 +21,22 @@ class PinHandler:
 
     def excludePins(self, relayNumbers):
 
+        print(f"excluded relays: {relayNumbers}")
+
         for i in relayNumbers:
 
             if i not in self.excluded_list:
 
                 self.excluded_list.append(i)
 
+        print(f"Exclude list: {self.excluded_list}")
+
     def undoExcludePins(self, relayNumbers):
 
+        print(f"undid exclusion of relays {relayNumbers}")
         for i in relayNumbers:
 
-            if i in self.excluded_list:
+            while i in self.excluded_list:
 
                 self.excluded_list.remove(i)
 
@@ -79,6 +84,6 @@ class PinHandler:
 
         for i in range(len(self.pin_array)):
 
-            if i not in self.excluded_list:
+            if i+1 not in self.excluded_list:
 
                 self.pin_array[i] = "0"

@@ -111,7 +111,7 @@ class Steps:
 
             start_time = time.time()
 
-            self.setLeachRelays([3, 9, 11, 14, 16, 19, 44, 45])
+            self.setLeachRelays([3, 9, 11, 14, 19, 16, 44, 45])
 
             self.spv_control.start_rotation()
 
