@@ -204,9 +204,10 @@ class SpvControl:
         
         with self.pin_handler.lock:
 
-            self.pin_handler.excludePins([17, 18])
+            self.pin_handler.excludePins(self.motor_relays)
 
         rotation = threading.Thread(target=self.rotation_manager)
+
         rotation.start()
 
     def stop_rotation(self):
