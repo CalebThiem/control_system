@@ -4,7 +4,7 @@ from arduino import Arduino
 from SPV_control import SpvControl
 from pin_handler import PinHandler
 import tkinter as tk
-from dummy_sensor_input import DummySensorInput
+from sensor_input import SensorInput
 
 class Steps:
 
@@ -97,7 +97,7 @@ class Steps:
                 "Action: PV water circulation and H2SO4 slowly added. pH monitored.",
                 "Outputs: 3, 9, 11, 14, 16, 19, BB, BO",
                 "Inputs: timer",
-                "Alarm condition: PVFM<10L/min",
+                "Alarm condition: PVFM = 0",
                 "Alarm action: stop step, find problem",
                 "Step end: t=5min",
                 "Step end action: advance to next step"
@@ -121,7 +121,7 @@ class Steps:
 
                 # Check alarm conditions
 
-                if self.check_sensor('PVFM') < 10:
+                if self.check_sensor('PVFM') == 0:
                     
                     self.cancel()
 
@@ -147,13 +147,9 @@ class Steps:
 
     def __init__(self, steps_display, timer_display, arduino, pin_handler):
         
-        # --- Test code --- 
-
-        self.dummy_sensor_input = DummySensorInput()
-
-        # --- End ---
-
         self.arduino = arduino
+
+        self.sensor_input = SensorInput(arduino)
 
         self.pin_handler = pin_handler
 
@@ -293,7 +289,8 @@ class Steps:
 
     def check_sensor(self, sensor_name):
 
-        return self.dummy_sensor_input.get_dummy_state(sensor_name)
+        return self.sensor_input.get_sensor_value(sensor_name)
+        #return self.dummy_sensor_input.get_dummy_state(sensor_name)
 
     def write_steps_display_text(self, text_as_list):
 

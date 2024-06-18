@@ -4,59 +4,60 @@ import random
 import binascii
 import threading
 from timeit import default_timer
-'''
-
-Communicates with the Arduino over serial. See arduino.ino docstring
-for detailed information on the communication protocol.
-
-Attributes:
-
-    connection_ready : bool
-
-        Set to True 2 seconds after connection is made
-        (Arduino needs time to reset after serial connection is established)
-
-   input_pin_states : string
-
-        Stores the latest string sent from the Arduino, reflecting the state
-        of the Arduino's input pins
-
-Methods:
-
-    connect(address, baud_rate)
-
-        Initiates the serial connection with the Arduino
-        (Returns "connection_failed" if unsuccessful)
-
-    disconnect()
-
-        Ends the serial connection
-
-    serial_communicate(message)
-
-        Sends a string to the Arduino
-
-    refresh(message)
-
-        Sends a string to the Arduino, stores the Arduino's response in
-        the input_pin_states variable, returns the Arduino's response
-
-    read_inputs()
-
-        Returns the Arduino's input pin state transmission
-
-    test(reps, transmission length (1 - 292), sleep time between
-    reps (seconds), print Arduino response string (True/False)
-
-        Transmits a random string of 1s and 0s to the Arduino,
-        receives response, and prints the time elapsed once
-        the test has ended
-'''
-
 # Define class that includes all Arduino I/O functionality
 
 
 class Arduino:
+
+    '''
+
+    Communicates with the Arduino over serial. See arduino.ino docstring
+    for detailed information on the communication protocol.
+
+    Attributes:
+
+        connection_ready : bool
+
+            Set to True 2 seconds after connection is made
+            (Arduino needs time to reset after serial connection is established)
+
+       input_pin_states : string
+
+            Stores the latest string sent from the Arduino, reflecting the state
+            of the Arduino's input pins
+
+    Methods:
+
+        connect(address, baud_rate)
+
+            Initiates the serial connection with the Arduino
+            (Returns "connection_failed" if unsuccessful)
+
+        disconnect()
+
+            Ends the serial connection
+
+        serial_communicate(message)
+
+            Sends a string to the Arduino
+
+        refresh(message)
+
+            Sends a string to the Arduino, stores the Arduino's response in
+            the input_pin_states variable, returns the Arduino's response
+
+        read_inputs()
+
+            Returns the Arduino's input pin state transmission
+
+        test(reps, transmission length (1 - 292), sleep time between
+        reps (seconds), print Arduino response string (True/False)
+
+            Transmits a random string of 1s and 0s to the Arduino,
+            receives response, and prints the time elapsed once
+            the test has ended
+    '''
+
 
     def __init__(self):
 
@@ -292,7 +293,7 @@ class Arduino:
 
             received_data = self.receive_data()
 
-            print(received_data)
+            # print(received_data)
 
             if (received_data == "download_failed"):
 
@@ -367,3 +368,11 @@ class Arduino:
         print('Upload failures:', upload_failures)
         print('Time elapsed: %s seconds' % round((end - start), 3))
 
+
+if __name__ == '__main__':
+
+    arduino = Arduino()
+
+    address_number = eval(input("enter number of serial port: "))
+
+    arduino.connect(f'/dev/ttyACM{address_number}', 480600)

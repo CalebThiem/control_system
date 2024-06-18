@@ -66,6 +66,8 @@ class SpvControl:
         self.pin_handler = pin_handler_instance
         self.arduino = arduino_instance
 
+        self.process_cancelled = False
+
         self.basket_assumed_in_rest_state = True
         self.bladder_assumed_in_rest_state = True
 
