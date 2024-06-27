@@ -191,7 +191,8 @@ class ArduinoInterface:
             self.arduino.connect(self.address, self.baud_rate)
 
         else:
-
+            
+            '''
             for possibility in range(9):
 
                 port = f"/dev/ttyACM{possibility}".format(possibility)
@@ -201,6 +202,17 @@ class ArduinoInterface:
                     self.address = port
 
                     break
+            '''
+
+        for address in os.listdir("/dev/serial/by-id"):
+
+            if "Arduino" in address:
+
+                self.address = "/dev/serial/by-id/" + address
+
+                break
+
+
 
             if (os.path.exists(self.address)):
 

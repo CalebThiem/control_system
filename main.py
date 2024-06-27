@@ -11,6 +11,7 @@ from pin_handler import PinHandler
 import time
 import os.path
 
+'''
 # Default address
 arduino_address = '/dev/ttyACM0'
 
@@ -23,6 +24,15 @@ for possibility in range(9):
         arduino_address = port
 
         break
+'''
+
+arduino_address = ""
+
+for address in os.listdir("/dev/serial/by-id"):
+
+    if "Arduino" in address:
+
+        arduino_address = '/dev/serial/by-id/' + address
 
        
 baud_rate = 460800
