@@ -3,6 +3,7 @@ import time
 import random
 import binascii
 import threading
+import os
 from timeit import default_timer
 # Define class that includes all Arduino I/O functionality
 
@@ -86,6 +87,9 @@ class Arduino:
         else:
 
             threading.Timer(2, self.set_ready).start()
+
+            return 1
+
 
     def disconnect(self):
 
@@ -324,6 +328,9 @@ class Arduino:
         upload_successes = 0
         upload_failures = 0
 
+        download_successes = 0
+        download_failures = 0
+
         if print_output is False:
 
             print("Test started...")
@@ -338,7 +345,9 @@ class Arduino:
 
             data = ''.join(random.choice('10') for _ in range(message_length))
 
-            print(data)
+            if print_output is True:
+
+                print(data)
 
             # Transmit data, receive response transmitted by Arduino
 
@@ -352,9 +361,25 @@ class Arduino:
 
                 upload_successes += 1
 
-            self.serial_communicate("?")
+            returned_value = self.serial_communicate("?")
+
+            if returned_value != 0:
+
+                upload_failures += 1
+
+            else:
+
+                upload_successes += 1
 
             message = self.receive_data()
+
+            if len(message) == 74:
+
+                download_successes += 1
+
+            else:
+
+                download_failures += 1
 
             if print_output is True:
 
@@ -366,6 +391,8 @@ class Arduino:
 
         print('Upload successes:', upload_successes)
         print('Upload failures:', upload_failures)
+        print('Download successes:', download_successes)
+        print('Download failures:', download_failures)
         print('Time elapsed: %s seconds' % round((end - start), 3))
 
 
@@ -373,6 +400,30 @@ if __name__ == '__main__':
 
     arduino = Arduino()
 
-    address_number = eval(input("enter number of serial port: "))
+    auto_connect = input("Connect automatically? y/n ")
 
-    arduino.connect(f'/dev/ttyACM{address_number}', 480600)
+    if auto_connect == "y":
+
+        arduino_address = ""
+
+        for address in os.listdir("/dev/serial/by-id"):
+
+            if "Arduino" in address:
+
+                arduino_address = '/dev/serial/by-id/' + address
+ 
+        if arduino.connect(arduino_address, 480600):
+
+            print(f'Connected to {arduino_address}')
+
+            print('Class instance "arduino" created. To test connection, run arduino.test(reps=10, message_length=292, sleep_time=0, print_output=True)')   
+    else:
+
+        address_number = eval(input("enter number of serial port: "))
+
+        if arduino.connect(f'/dev/ttyACM{address_number}', 480600):
+
+            print(f'Connected to /dev/ttyACM{address_number}')
+
+            print('Class instance "arduino" created. To test connection, run arduino.test(reps=10, message_length=292, sleep_time=0, print_output=True)')   
+
