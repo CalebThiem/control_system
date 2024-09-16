@@ -190,20 +190,11 @@ class ArduinoInterface:
     
             self.arduino.connect(self.address, self.baud_rate)
 
-        else:
-            
-            '''
-            for possibility in range(9):
+            self.arduino.connection_ready = True
 
-                port = f"/dev/ttyACM{possibility}".format(possibility)
-
-                if os.path.exists(port):
-
-                    self.address = port
-
-                    break
-            '''
-
+            self.root.after(2000, self.finalise_connection)
+        
+        '''
         for address in os.listdir("/dev/serial/by-id"):
 
             if "Arduino" in address:
@@ -211,8 +202,6 @@ class ArduinoInterface:
                 self.address = "/dev/serial/by-id/" + address
 
                 break
-
-
 
             if (os.path.exists(self.address)):
 
@@ -223,6 +212,7 @@ class ArduinoInterface:
                 self.arduino.connection_ready = True
 
                 self.root.after(2000, self.finalise_connection)
+        '''
 
     def disconnect_arduino(self):
         # Method to handle Arduino disconnection

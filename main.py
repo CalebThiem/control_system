@@ -11,21 +11,6 @@ from pin_handler import PinHandler
 import time
 import os.path
 
-'''
-# Default address
-arduino_address = '/dev/ttyACM0'
-
-for possibility in range(9):
-
-    port = f"/dev/ttyACM{possibility}".format(possibility)
-
-    if os.path.exists(port):
-
-        arduino_address = port
-
-        break
-'''
-
 arduino_address = ""
 
 for address in os.listdir("/dev/serial/by-id"):
@@ -40,8 +25,10 @@ baud_rate = 460800
 root = tk.Tk()
 root.title("test GUI")
 # Adjust the root geometry to fit the frames
-root.geometry("1200x650")
-root.resizable(False, False)
+#root.geometry("1200x650")
+#root.resizable(False, False)
+
+#root.attributes('-fullscreen', True)
 
 layout = dict()
 
