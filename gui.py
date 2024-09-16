@@ -93,6 +93,7 @@ class ArduinoInterface:
         # Show connection popup
         
         self.popup = tk.Toplevel(self.root)
+        self.popup.wm_attributes('-topmost', True)
         self.popup.geometry('600x50')
         self.popup.title("Connection Status")
         self.popup_text = tk.Label(self.popup, text="Connecting to Arduino...", pady=20)
@@ -100,7 +101,6 @@ class ArduinoInterface:
         
         self.connect_arduino()
 
-        self.root.after(2000, self.finalise_connection)
     
     def finalise_connection(self):
 
@@ -193,8 +193,9 @@ class ArduinoInterface:
             self.arduino.connection_ready = True
 
             self.root.after(2000, self.finalise_connection)
-        
-        '''
+
+            return
+
         for address in os.listdir("/dev/serial/by-id"):
 
             if "Arduino" in address:
@@ -212,7 +213,6 @@ class ArduinoInterface:
                 self.arduino.connection_ready = True
 
                 self.root.after(2000, self.finalise_connection)
-        '''
 
     def disconnect_arduino(self):
         # Method to handle Arduino disconnection
@@ -306,7 +306,7 @@ class TimerDisplay:
 
         self.total_time_display.pack(anchor='w')
 
-        self.timer_frame.place(x=5, y=5)
+        self.timer_frame.place(x=0, y=0)
 
     def step_timer_tick(self):
 
@@ -374,7 +374,13 @@ class ApplicationWindow:
         # Initialize the ArduinoInterface
         self.arduino_interface = ArduinoInterface(self.root, arduino, arduino_address, baud_rate, None, pin_handler, self.control_panel)
 
-        # Additional setup can be done here (e.g., menu bars, status bars, additional frames/panels)
+        self.set_fullscreen()
+
+    def set_fullscreen(self):
+
+        self.root.attributes('-fullscreen', True)
+
+        self.root.bind('<Escape>', lambda event: self.root.attributes('-fullscreen', False))
 
     def run(self):
         # Start the main loop of the application
